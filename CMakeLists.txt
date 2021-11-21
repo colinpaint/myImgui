@@ -1,5 +1,4 @@
 cmake_minimum_required (VERSION 3.16)
-cmake_policy (SET CMP0072 NEW)
 #
 option (BUILD_AVX "Build avx" ON)
 option (BUILD_OPTIMISED "Build optimised" ON)
@@ -7,6 +6,7 @@ option (BUILD_OPTIMISED "Build optimised" ON)
 set (OPENGL_VERSION "OPENGL_45")
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 
+# utils lib
 project (utils)
   file (GLOB HEADER_FILES utils/*.h)
   file (GLOB SOURCE_FILES utils/*.cpp utils/*.c)
@@ -50,25 +50,27 @@ endif()
 
 # imgui lib
 project (imgui)
-  file (GLOB HEADER_FILES *.h backends/imgui_impl_glfw.h backends/imgui_impl_opengl3.h)
-  file (GLOB SOURCE_FILES *.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl3.cpp)
+  file (GLOB HEADER_FILES *.h)
+  file (GLOB SOURCE_FILES *.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+
   target_include_directories (${PROJECT_NAME} PUBLIC glfw/include .)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
 
-# opengl3
+# opengl2 app
+project (opengl2)
+  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl2.h)
+  file (GLOB SOURCE_FILES main/opengl2/main.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl2.cpp)
+  add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+  target_include_directories (${PROJECT_NAME} PRIVATE . backends)
+  target_link_libraries (${PROJECT_NAME} PRIVATE imgui utils glfw glad GL)
+
+# opengl3 app
 project (opengl3)
-  file (GLOB SOURCE_FILES main/opengl3/main.cpp)
-  add_executable (${PROJECT_NAME} ${SOURCE_FILES})
-
-  #file (GLOB HEADER_FILES main/opengl3/main.cpp)
-  #file (GLOB SOURCE_FILES main/opengl3/main.cpp)
-  #add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-
-  find_package (PkgConfig REQUIRED)
-  #pkg_check_modules (GLFW REQUIRED IMPORTED_TARGET glfw)
-  #target_include_directories (${PROJECT_NAME} PRIVATE PkgConfig::GLFW)
-  #target_link_libraries (${PROJECT_NAME} PRIVATE utils PkgConfig::GLFW)
+  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl3.h)
+  file (GLOB SOURCE_FILES main/opengl3/main.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl3.cpp)
+  add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PRIVATE . backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE imgui utils glfw glad GL)
