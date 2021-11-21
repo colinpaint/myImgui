@@ -60,7 +60,7 @@ project (imgui)
 # opengl2 app
 project (opengl2)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl2.h)
-  file (GLOB SOURCE_FILES main/opengl2/main.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl2.cpp)
+  file (GLOB SOURCE_FILES main/opengl2.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl2.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PRIVATE . backends)
@@ -69,7 +69,7 @@ project (opengl2)
 # opengl3 app
 project (opengl3)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl3.h)
-  file (GLOB SOURCE_FILES main/opengl3/main.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl3.cpp)
+  file (GLOB SOURCE_FILES main/opengl3.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PRIVATE . backends)
