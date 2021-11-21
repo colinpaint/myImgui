@@ -1,3 +1,4 @@
+//{{{
 // dear imgui: Platform Backend for GLFW
 // This needs to be used along with a Renderer (e.g. OpenGL3, Vulkan, WebGPU..)
 // (Info: GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
@@ -20,7 +21,7 @@
 // About GLSL version:
 // The 'glsl_version' initialization parameter defaults to "#version 150" if NULL.
 // Only override if your GL version doesn't handle this GLSL version. Keep NULL if unsure!
-
+//}}}
 #pragma once
 #include "imgui.h"      // IMGUI_IMPL_API
 

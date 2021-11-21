@@ -1,3 +1,4 @@
+//{{{
 // dear imgui: Platform Backend for GLFW
 // This needs to be used along with a Renderer (e.g. OpenGL3, Vulkan, WebGPU..)
 // (Info: GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
@@ -45,7 +46,8 @@
 //  2018-01-18: Inputs: Added mapping for ImGuiKey_Insert.
 //  2017-08-25: Inputs: MousePos set to -FLT_MAX,-FLT_MAX when mouse is unavailable/missing (instead of -1,-1).
 //  2016-10-15: Misc: Added a void* user_data parameter to Clipboard function handlers.
-
+//}}}
+//{{{
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 
@@ -75,15 +77,18 @@
 #else
 #define GLFW_HAS_MOUSE_PASSTHROUGH    (0)
 #endif
+//}}}
 
 // GLFW data
+//{{{
 enum GlfwClientApi
 {
     GlfwClientApi_Unknown,
     GlfwClientApi_OpenGL,
     GlfwClientApi_Vulkan
 };
-
+//}}}
+//{{{
 struct ImGui_ImplGlfw_Data
 {
     GLFWwindow*             Window;
@@ -107,7 +112,8 @@ struct ImGui_ImplGlfw_Data
 
     ImGui_ImplGlfw_Data()   { memset(this, 0, sizeof(*this)); }
 };
-
+//}}}
+//{{{
 // Backend data stored in io.BackendPlatformUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
 // FIXME: multi-context support is not well tested and probably dysfunctional in this backend.
@@ -119,6 +125,7 @@ static ImGui_ImplGlfw_Data* ImGui_ImplGlfw_GetBackendData()
 {
     return ImGui::GetCurrentContext() ? (ImGui_ImplGlfw_Data*)ImGui::GetIO().BackendPlatformUserData : NULL;
 }
+//}}}
 
 // Forward Declarations
 static void ImGui_ImplGlfw_UpdateMonitors();
@@ -126,16 +133,19 @@ static void ImGui_ImplGlfw_InitPlatformInterface();
 static void ImGui_ImplGlfw_ShutdownPlatformInterface();
 
 // Functions
+//{{{
 static const char* ImGui_ImplGlfw_GetClipboardText(void* user_data)
 {
     return glfwGetClipboardString((GLFWwindow*)user_data);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_SetClipboardText(void* user_data, const char* text)
 {
     glfwSetClipboardString((GLFWwindow*)user_data, text);
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -145,7 +155,8 @@ void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow* window, int button, int acti
     if (action == GLFW_PRESS && button >= 0 && button < IM_ARRAYSIZE(bd->MouseJustPressed))
         bd->MouseJustPressed[button] = true;
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -156,7 +167,8 @@ void ImGui_ImplGlfw_ScrollCallback(GLFWwindow* window, double xoffset, double yo
     io.MouseWheelH += (float)xoffset;
     io.MouseWheel += (float)yoffset;
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -188,7 +200,8 @@ void ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int key, int scancode, int a
     io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 #endif
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_WindowFocusCallback(GLFWwindow* window, int focused)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -198,7 +211,8 @@ void ImGui_ImplGlfw_WindowFocusCallback(GLFWwindow* window, int focused)
     ImGuiIO& io = ImGui::GetIO();
     io.AddFocusEvent(focused != 0);
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_CursorEnterCallback(GLFWwindow* window, int entered)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -210,7 +224,8 @@ void ImGui_ImplGlfw_CursorEnterCallback(GLFWwindow* window, int entered)
     if (!entered && bd->MouseWindow == window)
         bd->MouseWindow = NULL;
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -220,13 +235,15 @@ void ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c)
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharacter(c);
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor*, int)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     bd->WantUpdateMonitors = true;
 }
-
+//}}}
+//{{{
 static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, GlfwClientApi client_api)
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -333,22 +350,26 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
     bd->ClientApi = client_api;
     return true;
 }
-
+//}}}
+//{{{
 bool ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks)
 {
     return ImGui_ImplGlfw_Init(window, install_callbacks, GlfwClientApi_OpenGL);
 }
-
+//}}}
+//{{{
 bool ImGui_ImplGlfw_InitForVulkan(GLFWwindow* window, bool install_callbacks)
 {
     return ImGui_ImplGlfw_Init(window, install_callbacks, GlfwClientApi_Vulkan);
 }
-
+//}}}
+//{{{
 bool ImGui_ImplGlfw_InitForOther(GLFWwindow* window, bool install_callbacks)
 {
     return ImGui_ImplGlfw_Init(window, install_callbacks, GlfwClientApi_Unknown);
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_Shutdown()
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -375,7 +396,8 @@ void ImGui_ImplGlfw_Shutdown()
     io.BackendPlatformUserData = NULL;
     IM_DELETE(bd);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_UpdateMousePosAndButtons()
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -453,7 +475,8 @@ static void ImGui_ImplGlfw_UpdateMousePosAndButtons()
 #endif
     }
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_UpdateMouseCursor()
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -480,7 +503,8 @@ static void ImGui_ImplGlfw_UpdateMouseCursor()
         }
     }
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_UpdateGamepads()
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -516,8 +540,9 @@ static void ImGui_ImplGlfw_UpdateGamepads()
         io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
     else
         io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
-}
-
+  }
+//}}}
+//{{{
 static void ImGui_ImplGlfw_UpdateMonitors()
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -552,7 +577,8 @@ static void ImGui_ImplGlfw_UpdateMonitors()
     }
     bd->WantUpdateMonitors = false;
 }
-
+//}}}
+//{{{
 void ImGui_ImplGlfw_NewFrame()
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -581,7 +607,8 @@ void ImGui_ImplGlfw_NewFrame()
     // Update game controllers (if enabled and available)
     ImGui_ImplGlfw_UpdateGamepads();
 }
-
+//}}}
+//{{{
 //--------------------------------------------------------------------------------------------------------
 // MULTI-VIEWPORT / PLATFORM INTERFACE SUPPORT
 // This is an _advanced_ and _optional_ feature, allowing the backend to create and handle multiple viewports simultaneously.
@@ -599,13 +626,15 @@ struct ImGui_ImplGlfw_ViewportData
     ImGui_ImplGlfw_ViewportData()  { Window = NULL; WindowOwned = false; IgnoreWindowSizeEventFrame = IgnoreWindowPosEventFrame = -1; }
     ~ImGui_ImplGlfw_ViewportData() { IM_ASSERT(Window == NULL); }
 };
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_WindowCloseCallback(GLFWwindow* window)
 {
     if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window))
         viewport->PlatformRequestClose = true;
 }
-
+//}}}
+//{{{
 // GLFW may dispatch window pos/size events after calling glfwSetWindowPos()/glfwSetWindowSize().
 // However: depending on the platform the callback may be invoked at different time:
 // - on Windows it appears to be called within the glfwSetWindowPos()/glfwSetWindowSize() call
@@ -626,7 +655,8 @@ static void ImGui_ImplGlfw_WindowPosCallback(GLFWwindow* window, int, int)
         viewport->PlatformRequestMove = true;
     }
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_WindowSizeCallback(GLFWwindow* window, int, int)
 {
     if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window))
@@ -641,7 +671,8 @@ static void ImGui_ImplGlfw_WindowSizeCallback(GLFWwindow* window, int, int)
         viewport->PlatformRequestResize = true;
     }
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -684,7 +715,8 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
         glfwSwapInterval(0);
     }
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -710,11 +742,13 @@ static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
     }
     viewport->PlatformUserData = viewport->PlatformHandle = NULL;
 }
+//}}}
 
 // We have submitted https://github.com/glfw/glfw/pull/1568 to allow GLFW to support "transparent inputs".
 // In the meanwhile we implement custom per-platform workarounds here (FIXME-VIEWPORT: Implement same work-around for Linux/OSX!)
 #if !GLFW_HAS_MOUSE_PASSTHROUGH && GLFW_HAS_WINDOW_HOVERED && defined(_WIN32)
 static WNDPROC g_GlfwWndProc = NULL;
+//{{{
 static LRESULT CALLBACK WndProcNoInputs(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (msg == WM_NCHITTEST)
@@ -729,8 +763,10 @@ static LRESULT CALLBACK WndProcNoInputs(HWND hWnd, UINT msg, WPARAM wParam, LPAR
     }
     return ::CallWindowProc(g_GlfwWndProc, hWnd, msg, wParam, lParam);
 }
+//}}}
 #endif
 
+//{{{
 static void ImGui_ImplGlfw_ShowWindow(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
@@ -769,7 +805,8 @@ static void ImGui_ImplGlfw_ShowWindow(ImGuiViewport* viewport)
 
     glfwShowWindow(vd->Window);
 }
-
+//}}}
+//{{{
 static ImVec2 ImGui_ImplGlfw_GetWindowPos(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
@@ -777,14 +814,16 @@ static ImVec2 ImGui_ImplGlfw_GetWindowPos(ImGuiViewport* viewport)
     glfwGetWindowPos(vd->Window, &x, &y);
     return ImVec2((float)x, (float)y);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_SetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
     vd->IgnoreWindowPosEventFrame = ImGui::GetFrameCount();
     glfwSetWindowPos(vd->Window, (int)pos.x, (int)pos.y);
 }
-
+//}}}
+//{{{
 static ImVec2 ImGui_ImplGlfw_GetWindowSize(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
@@ -792,7 +831,8 @@ static ImVec2 ImGui_ImplGlfw_GetWindowSize(ImGuiViewport* viewport)
     glfwGetWindowSize(vd->Window, &w, &h);
     return ImVec2((float)w, (float)h);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
@@ -809,13 +849,15 @@ static void ImGui_ImplGlfw_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
     vd->IgnoreWindowSizeEventFrame = ImGui::GetFrameCount();
     glfwSetWindowSize(vd->Window, (int)size.x, (int)size.y);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_SetWindowTitle(ImGuiViewport* viewport, const char* title)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
     glfwSetWindowTitle(vd->Window, title);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_SetWindowFocus(ImGuiViewport* viewport)
 {
 #if GLFW_HAS_FOCUS_WINDOW
@@ -826,27 +868,31 @@ static void ImGui_ImplGlfw_SetWindowFocus(ImGuiViewport* viewport)
     (void)viewport;
 #endif
 }
-
+//}}}
+//{{{
 static bool ImGui_ImplGlfw_GetWindowFocus(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
     return glfwGetWindowAttrib(vd->Window, GLFW_FOCUSED) != 0;
 }
-
+//}}}
+//{{{
 static bool ImGui_ImplGlfw_GetWindowMinimized(ImGuiViewport* viewport)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
     return glfwGetWindowAttrib(vd->Window, GLFW_ICONIFIED) != 0;
 }
-
+//}}}
 #if GLFW_HAS_WINDOW_ALPHA
+//{{{
 static void ImGui_ImplGlfw_SetWindowAlpha(ImGuiViewport* viewport, float alpha)
 {
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
     glfwSetWindowOpacity(vd->Window, alpha);
 }
+//}}}
 #endif
-
+//{{{
 static void ImGui_ImplGlfw_RenderWindow(ImGuiViewport* viewport, void*)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -854,7 +900,8 @@ static void ImGui_ImplGlfw_RenderWindow(ImGuiViewport* viewport, void*)
     if (bd->ClientApi == GlfwClientApi_OpenGL)
         glfwMakeContextCurrent(vd->Window);
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -865,62 +912,66 @@ static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
         glfwSwapBuffers(vd->Window);
     }
 }
+//}}}
 
 //--------------------------------------------------------------------------------------------------------
 // IME (Input Method Editor) basic support for e.g. Asian language users
 //--------------------------------------------------------------------------------------------------------
-
 // We provide a Win32 implementation because this is such a common issue for IME users
 #if defined(_WIN32) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS) && !defined(IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS)
-#define HAS_WIN32_IME   1
-#include <imm.h>
-#ifdef _MSC_VER
-#pragma comment(lib, "imm32")
-#endif
-static void ImGui_ImplWin32_SetImeInputPos(ImGuiViewport* viewport, ImVec2 pos)
-{
-    COMPOSITIONFORM cf = { CFS_FORCE_POSITION, { (LONG)(pos.x - viewport->Pos.x), (LONG)(pos.y - viewport->Pos.y) }, { 0, 0, 0, 0 } };
-    if (HWND hwnd = (HWND)viewport->PlatformHandleRaw)
-        if (HIMC himc = ::ImmGetContext(hwnd))
-        {
-            ::ImmSetCompositionWindow(himc, &cf);
-            ::ImmReleaseContext(hwnd, himc);
-        }
-}
+  #define HAS_WIN32_IME   1
+  #include <imm.h>
+  #ifdef _MSC_VER
+    #pragma comment(lib, "imm32")
+  #endif
+  //{{{
+  static void ImGui_ImplWin32_SetImeInputPos(ImGuiViewport* viewport, ImVec2 pos)
+  {
+      COMPOSITIONFORM cf = { CFS_FORCE_POSITION, { (LONG)(pos.x - viewport->Pos.x), (LONG)(pos.y - viewport->Pos.y) }, { 0, 0, 0, 0 } };
+      if (HWND hwnd = (HWND)viewport->PlatformHandleRaw)
+          if (HIMC himc = ::ImmGetContext(hwnd))
+          {
+              ::ImmSetCompositionWindow(himc, &cf);
+              ::ImmReleaseContext(hwnd, himc);
+          }
+  }
+  //}}}
 #else
-#define HAS_WIN32_IME   0
+  #define HAS_WIN32_IME   0
 #endif
 
 //--------------------------------------------------------------------------------------------------------
 // Vulkan support (the Vulkan renderer needs to call a platform-side support function to create the surface)
 //--------------------------------------------------------------------------------------------------------
-
 // Avoid including <vulkan.h> so we can build without it
 #if GLFW_HAS_VULKAN
-#ifndef VULKAN_H_
-#define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
-#if defined(__LP64__) || defined(_WIN64) || defined(__x86_64__) || defined(_M_X64) || defined(__ia64) || defined (_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-#define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef struct object##_T *object;
-#else
-#define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef uint64_t object;
-#endif
-VK_DEFINE_HANDLE(VkInstance)
-VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSurfaceKHR)
-struct VkAllocationCallbacks;
-enum VkResult { VK_RESULT_MAX_ENUM = 0x7FFFFFFF };
-#endif // VULKAN_H_
-extern "C" { extern GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface); }
-static int ImGui_ImplGlfw_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_instance, const void* vk_allocator, ImU64* out_vk_surface)
-{
-    ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
-    ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
-    IM_UNUSED(bd);
-    IM_ASSERT(bd->ClientApi == GlfwClientApi_Vulkan);
-    VkResult err = glfwCreateWindowSurface((VkInstance)vk_instance, vd->Window, (const VkAllocationCallbacks*)vk_allocator, (VkSurfaceKHR*)out_vk_surface);
-    return (int)err;
-}
+  #ifndef VULKAN_H_
+  #define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
+  #if defined(__LP64__) || defined(_WIN64) || defined(__x86_64__) || defined(_M_X64) || defined(__ia64) || defined (_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+  #define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef struct object##_T *object;
+  #else
+  #define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef uint64_t object;
+  #endif
+  VK_DEFINE_HANDLE(VkInstance)
+  VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSurfaceKHR)
+  struct VkAllocationCallbacks;
+  enum VkResult { VK_RESULT_MAX_ENUM = 0x7FFFFFFF };
+  #endif // VULKAN_H_
+  extern "C" { extern GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface); }
+  //{{{
+  static int ImGui_ImplGlfw_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_instance, const void* vk_allocator, ImU64* out_vk_surface)
+  {
+      ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
+      ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
+      IM_UNUSED(bd);
+      IM_ASSERT(bd->ClientApi == GlfwClientApi_Vulkan);
+      VkResult err = glfwCreateWindowSurface((VkInstance)vk_instance, vd->Window, (const VkAllocationCallbacks*)vk_allocator, (VkSurfaceKHR*)out_vk_surface);
+      return (int)err;
+  }
+  //}}}
 #endif // GLFW_HAS_VULKAN
 
+//{{{
 static void ImGui_ImplGlfw_InitPlatformInterface()
 {
     // Register platform interface (will be coupled with a renderer interface)
@@ -958,8 +1009,10 @@ static void ImGui_ImplGlfw_InitPlatformInterface()
     main_viewport->PlatformUserData = vd;
     main_viewport->PlatformHandle = (void*)bd->Window;
 }
-
+//}}}
+//{{{
 static void ImGui_ImplGlfw_ShutdownPlatformInterface()
 {
     ImGui::DestroyPlatformWindows();
 }
+//}}}

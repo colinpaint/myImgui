@@ -48,14 +48,19 @@ elseif (OPENGL_VERSION STREQUAL "OPENGL_45")
   add_subdirectory (glad4.5core)
 endif()
 
-# imgui lib
+# imgui glfw lib
 project (imgui)
   file (GLOB HEADER_FILES *.h)
   file (GLOB SOURCE_FILES *.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
-  target_include_directories (${PROJECT_NAME} PUBLIC glfw/include .)
+  target_include_directories (${PROJECT_NAME} PUBLIC . glfw/include)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
+  if (MSVC)
+    target_link_libraries (${PROJECT_NAME} PRIVATE opengl32 glfw glad d3d11 d3dcompiler)
+  else()
+    target_link_libraries (${PROJECT_NAME} PRIVATE GL glfw glad)
+  endif()
 
 # opengl2 app
 project (opengl2)
@@ -64,7 +69,7 @@ project (opengl2)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PRIVATE . backends)
-  target_link_libraries (${PROJECT_NAME} PRIVATE imgui utils glfw glad GL)
+  target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
 
 # opengl3 app
 project (opengl3)
@@ -73,4 +78,4 @@ project (opengl3)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PRIVATE . backends)
-  target_link_libraries (${PROJECT_NAME} PRIVATE imgui utils glfw glad GL)
+  target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
