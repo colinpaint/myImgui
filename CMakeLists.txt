@@ -50,8 +50,8 @@ endif()
 
 # imgui glfw lib
 project (imgui)
-  file (GLOB HEADER_FILES *.h)
-  file (GLOB SOURCE_FILES *.cpp)
+  file (GLOB HEADER_FILES imgui/*.h)
+  file (GLOB SOURCE_FILES imgui/*.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
   target_include_directories (${PROJECT_NAME} PUBLIC . glfw/include)
@@ -62,20 +62,27 @@ project (imgui)
     target_link_libraries (${PROJECT_NAME} PRIVATE GL glfw glad)
   endif()
 
+# implot lib
+project (implot)
+  file (GLOB HEADER_FILES implot/*.h)
+  file (GLOB SOURCE_FILES implot/*.cpp)
+  add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+  target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+
 # opengl2 app
 project (opengl2)
-  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl2.h)
-  file (GLOB SOURCE_FILES main/opengl2.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl2.cpp)
+  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl2.h)
+  file (GLOB SOURCE_FILES opengl2.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl2.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-  target_include_directories (${PROJECT_NAME} PRIVATE . backends)
-  target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
+  target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
+  target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
 
 # opengl3 app
 project (opengl3)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl3.h)
-  file (GLOB SOURCE_FILES main/opengl3.cpp backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl3.cpp)
+  file (GLOB SOURCE_FILES opengl3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-  target_include_directories (${PROJECT_NAME} PRIVATE . backends)
-  target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
+  target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
+  target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
