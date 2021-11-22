@@ -69,6 +69,16 @@ project (implot)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
 
+if (MSVC)
+  project (directx11)
+    file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
+    file (GLOB SOURCE_FILES directx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
+    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+    target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+endif()
+
 # opengl2 app
 project (opengl2)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl2.h)

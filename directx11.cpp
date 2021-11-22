@@ -1,3 +1,4 @@
+//{{{
 // Dear ImGui: standalone example application for DirectX 11
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
@@ -7,6 +8,7 @@
 #include "imgui_impl_dx11.h"
 #include <d3d11.h>
 #include <tchar.h>
+//}}}
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -19,8 +21,10 @@ bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
+
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+//{{{
 // Main code
 int main(int, char**)
 {
@@ -185,10 +189,11 @@ int main(int, char**)
 
     return 0;
 }
+//}}}
 
 // Helper functions
-
-bool CreateDeviceD3D(HWND hWnd)
+//{{{
+bool CreateDeviceD3D (HWND hWnd)
 {
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC sd;
@@ -217,7 +222,8 @@ bool CreateDeviceD3D(HWND hWnd)
     CreateRenderTarget();
     return true;
 }
-
+//}}}
+//{{{
 void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
@@ -225,7 +231,8 @@ void CleanupDeviceD3D()
     if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = NULL; }
     if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = NULL; }
 }
-
+//}}}
+//{{{
 void CreateRenderTarget()
 {
     ID3D11Texture2D* pBackBuffer;
@@ -233,11 +240,13 @@ void CreateRenderTarget()
     g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_mainRenderTargetView);
     pBackBuffer->Release();
 }
-
+//}}}
+//{{{
 void CleanupRenderTarget()
 {
     if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = NULL; }
 }
+//}}}
 
 #ifndef WM_DPICHANGED
 #define WM_DPICHANGED 0x02E0 // From Windows SDK 8.1+ headers
@@ -246,8 +255,9 @@ void CleanupRenderTarget()
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+//{{{
 // Win32 message handler
-LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT WINAPI WndProc (HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
@@ -281,3 +291,4 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
+//}}}
