@@ -71,6 +71,7 @@ project (implot)
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
 
 if (MSVC)
+  # directx11 app
   project (directx11)
     file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
     file (GLOB SOURCE_FILES directx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
@@ -80,6 +81,7 @@ if (MSVC)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
     target_link_libraries (${PROJECT_NAME} PRIVATE d3d11 d3dcompiler)
 
+  # directx12 app
   if (BUILD_DIRECTX12)
     project (directx12)
       file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx12.h)

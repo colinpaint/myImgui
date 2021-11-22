@@ -4,38 +4,38 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 //}}}
-//{{{
+//{{{  includes
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
+
 #if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
+  #include <GLES2/gl2.h>
 #endif
+
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
 // Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
+  #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 //}}}
 
 //{{{
-static void glfw_error_callback(int error, const char* description)
-{
-    fprintf(stderr, "Glfw Error %d: %s\n", error, description);
-}
+static void glfw_error_callback(int error, const char* description) {
+  fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+  }
 //}}}
 
-//{{{
-int main(int, char**) {
+int main (int, char**) {
 
   // Setup window
-  glfwSetErrorCallback(glfw_error_callback);
+  glfwSetErrorCallback (glfw_error_callback);
   if (!glfwInit())
-      return 1;
+    return 1;
 
   // Decide GL+GLSL versions
   #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -64,11 +64,11 @@ int main(int, char**) {
   #endif
 
   // Create window with graphics context
-  GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow (1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
   if (window == NULL)
-      return 1;
+    return 1;
   glfwMakeContextCurrent(window);
-  glfwSwapInterval(1); // Enable vsync
+  glfwSwapInterval (1); // Enable vsync
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -85,16 +85,17 @@ int main(int, char**) {
   ImGui::StyleColorsDark();
   //ImGui::StyleColorsClassic();
 
-  // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
   ImGuiStyle& style = ImGui::GetStyle();
   if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    //{{{  When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
     style.WindowRounding = 0.0f;
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    //}}}
 
   // Setup Platform/Renderer backends
-  ImGui_ImplGlfw_InitForOpenGL(window, true);
-  ImGui_ImplOpenGL3_Init(glsl_version);
+  ImGui_ImplGlfw_InitForOpenGL (window, true);
+  ImGui_ImplOpenGL3_Init (glsl_version);
 
   //{{{  Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -115,9 +116,9 @@ int main(int, char**) {
   // Our state
   bool show_demo_window = true;
   bool show_another_window = false;
-  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+  ImVec4 clear_color = ImVec4 (0.45f, 0.55f, 0.60f, 1.00f);
 
-  while (!glfwWindowShouldClose(window)) {
+  while (!glfwWindowShouldClose (window)) {
     //{{{  main loop
     // Poll and handle events (inputs, window resize, etc.)
     // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -200,4 +201,3 @@ int main(int, char**) {
 
   return 0;
   }
-//}}}
