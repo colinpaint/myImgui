@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 3.16)
 #
+option (BUILD_DIRECTX12 "Build directx12" ON)
 option (BUILD_AVX "Build avx" ON)
 option (BUILD_OPTIMISED "Build optimised" ON)
 #
@@ -57,7 +58,7 @@ project (imgui)
   target_include_directories (${PROJECT_NAME} PUBLIC . glfw/include)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
   if (MSVC)
-    target_link_libraries (${PROJECT_NAME} PRIVATE opengl32 glfw glad d3d11 d3dcompiler)
+    target_link_libraries (${PROJECT_NAME} PRIVATE opengl32 glfw glad)
   else()
     target_link_libraries (${PROJECT_NAME} PRIVATE GL glfw glad)
   endif()
@@ -77,6 +78,18 @@ if (MSVC)
 
     target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+    target_link_libraries (${PROJECT_NAME} PRIVATE d3d11 d3dcompiler)
+
+  if (BUILD_DIRECTX12)
+    project (directx12)
+      file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx12.h)
+      file (GLOB SOURCE_FILES directx12.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx12.cpp)
+      add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+      target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
+      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+      target_link_libraries (${PROJECT_NAME} PRIVATE d3d12 d3d11 d3dcompiler dxgi)
+  endif()
 endif()
 
 # opengl2 app
@@ -87,6 +100,9 @@ project (opengl2)
 
   target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+  if (MSVC)
+    target_link_libraries (${PROJECT_NAME} PRIVATE d3d11 d3dcompiler)
+  endif()
 
 # opengl3 app
 project (opengl3)
@@ -96,3 +112,6 @@ project (opengl3)
 
   target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+  if (MSVC)
+    target_link_libraries (${PROJECT_NAME} PRIVATE d3d11 d3dcompiler)
+  endif()
