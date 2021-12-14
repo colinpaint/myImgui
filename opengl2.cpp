@@ -43,6 +43,7 @@ int main(int, char**) {
   if (window == NULL)
     return 1;
   glfwMakeContextCurrent (window);
+
   #ifdef BUILD_FREE
     glfwSwapInterval (0); // disable vsync
   #else
@@ -56,10 +57,12 @@ int main(int, char**) {
   ImGuiIO& io = ImGui::GetIO(); (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
   //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
   #ifdef BUILD_DOCKING
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
   #endif
+
   //io.ConfigViewportsNoAutoMerge = true;
   //io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -70,7 +73,7 @@ int main(int, char**) {
   #ifdef BUILD_DOCKING
     ImGuiStyle& style = ImGui::GetStyle();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-      //    When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+      // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
       style.WindowRounding = 0.0f;
       style.Colors[ImGuiCol_WindowBg].w = 1.0f;
       }
