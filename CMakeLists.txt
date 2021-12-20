@@ -2,6 +2,8 @@
 #cmake .. -DBUILD_FREE=ON -DBUILD_DOCKING=ON
 #
 cmake_minimum_required (VERSION 3.16)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #
 option (BUILD_DOCKING "Build docking" OFF)
 option (BUILD_FREE "Build free run" OFF)
@@ -75,6 +77,19 @@ project (implot)
   file (GLOB SOURCE_FILES implot/*.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+
+if (NOT MSVC)
+  project (gles3min)
+  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
+  file (GLOB SOURCE_FILES gles3min.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
+  add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+  target_include_directories (${PROJECT_NAME} PUBLIC imgui imgui/backends)
+  add_compile_definitions (GLFW_INCLUDE_ES3=1
+                           IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
+                           IMGUI_IMPL_OPENGL_ES3=1)
+  target_link_libraries (${PROJECT_NAME} imgui glfw GLESv2)
+endif()
 
 if (MSVC)
   # directx11 app
