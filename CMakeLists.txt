@@ -1,18 +1,20 @@
 #cmake .. -DBUILD_FREE=ON -DBUILD_DOCKING=ON
 #
-cmake_minimum_required (VERSION 3.16)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+cmake_minimum_required (VERSION 3.18)
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
 #
-option (BUILD_DOCKING "Build docking" OFF)
-option (BUILD_FREE "Build free run" OFF)
 option (BUILD_DIRECTX12 "Build directx12" ON)
-option (GLAD_OPENGL2 "glad opengl2" OFF)
 #
-option (BUILD_AVX "Build avx" ON)
-option (BUILD_OPTIMISED "Build optimised" ON)
+set (BUILD_DOCKING "DOCKING" CACHE STRING "Build imgui docking option")
+set (BUILD_VSYNC "VSYNC" CACHE STRING "Build imgui vsync option")
 #
-set (OPENGL_VERSION "OPENGL3")
+# valid options - OPENGL_2 OPENGL_3 OPENGLES_3
+set (BUILD_GRAPHICS "OPENGL_3" CACHE STRING "build graphics option")
+#
+set (COMPILE_MSVC "/arch:AVX" CACHE STRING "msvc compile options")
+set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
+#
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 
 # utils lib
@@ -22,10 +24,7 @@ project (utils)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
   if (MSVC)
-    target_compile_options (${PROJECT_NAME} PUBLIC /W4 /fp:fast /std:c++17)
-    if (BUILD_AVX)
-      target_compile_options (${PROJECT_NAME} PUBLIC /arch:AVX)
-    endif()
+    target_compile_options (${PROJECT_NAME} PUBLIC /W4 /fp:fast ${COMPILE_MSVC})
   else()
     target_compile_definitions (${PROJECT_NAME} PUBLIC _LARGEFILE64_SOURCE _FILE_OFFSET_BITS=64)
     target_compile_options (${PROJECT_NAME} PUBLIC -Wall -Wextra
@@ -33,13 +32,8 @@ project (utils)
                                                    -Wno-format-security -Wno-format-overflow
                                                    -pedantic
                                                    -march=native -flax-vector-conversions -ftree-vectorize
-                                                   -std=c++17 )
-    if (BUILD_OPTIMISED)
-      target_compile_options (${PROJECT_NAME} PUBLIC -Ofast)
-    else()
-      target_compile_options (${PROJECT_NAME} PUBLIC -g -O0)
-    endif()
-endif()
+                                                   ${COMPILE_LINUX})
+  endif()
 
 # glfw
 set (GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -51,9 +45,9 @@ set (GLFW_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory (glfw)
 
 # glad
-if (GLAD_OPENGL2)
+if (BUILD_GRAPHICS STREQUAL "OPENGL_2")
   add_subdirectory (glad2.1+fbo+vao)
-else()
+elseif (BUILD_GRAPHICS STREQUAL "OPENGL_3")
   add_subdirectory (glad4.5core)
 endif()
 
@@ -63,8 +57,9 @@ project (imgui)
   file (GLOB SOURCE_FILES imgui/*.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
-  target_include_directories (${PROJECT_NAME} PUBLIC . glfw/include)
+  target_include_directories (${PROJECT_NAME} PRIVATE . glfw/include)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
+
   if (MSVC)
     target_link_libraries (${PROJECT_NAME} PRIVATE opengl32 glfw glad)
   else()
@@ -85,14 +80,8 @@ if (MSVC)
     file (GLOB SOURCE_FILES directx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
     add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-    # options
-    if (BUILD_FREE)
-      target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
-    endif()
-    if (BUILD_DOCKING)
-      target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
-    endif()
-
+    target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_DOCKING})
+    target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_VSYNC})
     target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
     target_link_libraries (${PROJECT_NAME} PRIVATE d3d11 d3dcompiler)
@@ -104,18 +93,13 @@ if (MSVC)
       file (GLOB SOURCE_FILES directx12.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx12.cpp)
       add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-      # options
-      if (BUILD_FREE)
-        target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
-      endif()
-      if (BUILD_DOCKING)
-        target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
-      endif()
-
+      target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_DOCKING})
+      target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_VSYNC})
       target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
-      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
-      target_link_libraries (${PROJECT_NAME} PRIVATE d3d12 d3d11 d3dcompiler dxgi)
+      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi)
   endif()
+
+# not MSVC
 else()
   # gles3 minimal app
   project (gles3min)
@@ -123,14 +107,12 @@ else()
     file (GLOB SOURCE_FILES gles3min.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
     add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-    # option
-    if (BUILD_FREE)
-      target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
-    endif()
-    target_include_directories (${PROJECT_NAME} PUBLIC imgui imgui/backends)
-    add_compile_definitions (GLFW_INCLUDE_ES3=1
-                             IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
-                             IMGUI_IMPL_OPENGL_ES3=1)
+    target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
+    target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_DOCKING})
+    target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_VSYNC})
+    target_compile_definitions (${PROJECT_NAME} PRIVATE GLFW_INCLUDE_ES3=1
+                                                        IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
+                                                        IMGUI_IMPL_OPENGL_ES3=1)
     target_link_libraries (${PROJECT_NAME} imgui glfw GLESv2)
   endif()
 
@@ -140,14 +122,8 @@ project (opengl2)
   file (GLOB SOURCE_FILES opengl2.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl2.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-  # options
-  if (BUILD_FREE)
-    target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
-  endif()
-  if (BUILD_DOCKING)
-    target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
-  endif()
-
+  target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_DOCKING})
+  target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_VSYNC})
   target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
   if (MSVC)
@@ -160,14 +136,8 @@ project (opengl3)
   file (GLOB SOURCE_FILES opengl3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-  # options
-  if (BUILD_FREE)
-    target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
-  endif()
-  if (BUILD_DOCKING)
-    target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
-  endif()
-
+  target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_DOCKING})
+  target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_VSYNC})
   target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
   if (MSVC)

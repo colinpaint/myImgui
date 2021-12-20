@@ -100,10 +100,10 @@ int main() {
   GLFWwindow* window = glfwCreateWindow (1280, 720, "raspberry pi 4 - imgui + shader demo", NULL, NULL);
   glfwMakeContextCurrent (window);
 
-  #ifdef BUILD_FREE
-    glfwSwapInterval (0); // disable vsync
-  #else
+  #ifdef VSYNC
     glfwSwapInterval (1); // Enable vsync
+  #else
+    glfwSwapInterval (0); // disable vsync
   #endif
 
   // initialize ImGui

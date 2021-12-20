@@ -69,10 +69,10 @@ int main (int, char**) {
     return 1;
   glfwMakeContextCurrent(window);
 
-  #ifdef BUILD_FREE
-    glfwSwapInterval (0); // disable vsync
-  #else
+  #ifdef VSYNC
     glfwSwapInterval (1); // Enable vsync
+  #else
+    glfwSwapInterval (0); // disable vsync
   #endif
 
   // Setup Dear ImGui context
@@ -82,7 +82,7 @@ int main (int, char**) {
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
   //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-  #ifdef BUILD_DOCKING
+  #ifdef DOCKING
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
   #endif
@@ -94,13 +94,13 @@ int main (int, char**) {
   ImGui::StyleColorsDark();
   //ImGui::StyleColorsClassic();
 
-  #ifdef BUILD_DOCKING
-  ImGuiStyle& style = ImGui::GetStyle();
-  if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-    style.WindowRounding = 0.0f;
-    style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
+  #ifdef DOCKING
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+      // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+      style.WindowRounding = 0.0f;
+      style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+      }
   #endif
 
   // Setup Platform/Renderer backends
@@ -191,7 +191,7 @@ int main (int, char**) {
     // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
     //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
 
-    #ifdef BUILD_DOCKING
+    #ifdef DOCKING
       if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();

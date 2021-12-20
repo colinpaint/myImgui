@@ -52,7 +52,7 @@ int main(int, char**)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-  #ifdef BUILD_DOCKING
+  #ifdef DOCKING
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
   #endif
@@ -68,7 +68,7 @@ int main(int, char**)
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
-  #ifdef BUILD_DOCKING
+  #ifdef DOCKING
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
     ImGuiStyle& style = ImGui::GetStyle();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -171,7 +171,7 @@ int main(int, char**)
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-     #ifdef BUILD_DOCKING
+     #ifdef DOCKING
         // Update and Render additional Platform Windows
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
@@ -180,10 +180,10 @@ int main(int, char**)
         }
      #endif
 
-     #ifdef BUILD_FREE
-        g_pSwapChain->Present(0, 0); // Present without vsync
-     #else
+     #ifdef VSYNC
         g_pSwapChain->Present(1, 0); // Present with vsync
+     #else
+        g_pSwapChain->Present(0, 0); // Present without vsync
      #endif
     }
 

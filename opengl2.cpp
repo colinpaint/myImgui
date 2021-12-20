@@ -15,10 +15,6 @@
 
 #include <stdio.h>
 
-#ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
-#endif
-
 #include <GLFW/glfw3.h>
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
@@ -47,10 +43,10 @@ int main(int, char**) {
     return 1;
   glfwMakeContextCurrent (window);
 
-  #ifdef BUILD_FREE
-    glfwSwapInterval (0); // disable vsync
-  #else
+  #if defined(VSYNC)
     glfwSwapInterval (1); // Enable vsync
+  #else
+    glfwSwapInterval (0); // disable vsync
   #endif
 
 
@@ -61,7 +57,7 @@ int main(int, char**) {
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
   //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-  #ifdef BUILD_DOCKING
+  #if defined(DOCKING)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
   #endif
@@ -73,7 +69,7 @@ int main(int, char**) {
   ImGui::StyleColorsDark();
   //ImGui::StyleColorsClassic();
 
-  #ifdef BUILD_DOCKING
+  #if defined(DOCKING)
     ImGuiStyle& style = ImGui::GetStyle();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
       // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -177,9 +173,8 @@ int main(int, char**) {
       // Update and Render additional Platform Windows
       // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
       //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
-      #ifdef BUILD_DOCKING
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportRenderIconsEnable)
-        {
+      #if defined(DOCKING)
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
           GLFWwindow* backup_current_context = glfwGetCurrentContext();
           ImGui::UpdatePlatformWindows();
           ImGui::RenderPlatformWindowsDefault();
