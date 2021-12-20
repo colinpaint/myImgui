@@ -1,6 +1,6 @@
 // gles3min.cpp - minimal testbed for gles3 raspberry pi imgui + user defined uniforms, shader
 // - https://github.com/blitz-research/opengldev
-// uniforms tutorial 
+// uniforms tutorial
 // - https://www.lighthouse3d.com/tutorials/glsl-tutorial/uniform-blocks/
 //{{{  includes
 #include <cstdio>
@@ -98,7 +98,12 @@ int main() {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
   GLFWwindow* window = glfwCreateWindow(1280, 720, "Awesome Raspberry Pi 400 Demo!", NULL, NULL);
   glfwMakeContextCurrent(window);
-  glfwSwapInterval(1);
+
+  #ifdef BUILD_FREE
+    glfwSwapInterval (0); // disable vsync
+  #else
+    glfwSwapInterval (1); // Enable vsync
+  #endif
 
   // initialize ImGui
   ImGui::CreateContext();

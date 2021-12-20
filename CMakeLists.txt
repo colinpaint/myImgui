@@ -1,4 +1,3 @@
-# options
 #cmake .. -DBUILD_FREE=ON -DBUILD_DOCKING=ON
 #
 cmake_minimum_required (VERSION 3.16)
@@ -8,11 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option (BUILD_DOCKING "Build docking" OFF)
 option (BUILD_FREE "Build free run" OFF)
 option (BUILD_DIRECTX12 "Build directx12" ON)
+option (GLAD_OPENGL2 "glad opengl2" OFF)
 #
 option (BUILD_AVX "Build avx" ON)
 option (BUILD_OPTIMISED "Build optimised" ON)
 #
-set (OPENGL_VERSION "OPENGL_45")
+set (OPENGL_VERSION "OPENGL3")
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 
 # utils lib
@@ -51,9 +51,9 @@ set (GLFW_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory (glfw)
 
 # glad
-if (OPENGL_VERSION STREQUAL "OPENGL_21")
+if (GLAD_OPENGL2)
   add_subdirectory (glad2.1+fbo+vao)
-elseif (OPENGL_VERSION STREQUAL "OPENGL_45")
+else()
   add_subdirectory (glad4.5core)
 endif()
 
@@ -78,19 +78,6 @@ project (implot)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
 
-if (NOT MSVC)
-  project (gles3min)
-  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
-  file (GLOB SOURCE_FILES gles3min.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
-  add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-
-  target_include_directories (${PROJECT_NAME} PUBLIC imgui imgui/backends)
-  add_compile_definitions (GLFW_INCLUDE_ES3=1
-                           IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
-                           IMGUI_IMPL_OPENGL_ES3=1)
-  target_link_libraries (${PROJECT_NAME} imgui glfw GLESv2)
-endif()
-
 if (MSVC)
   # directx11 app
   project (directx11)
@@ -98,6 +85,7 @@ if (MSVC)
     file (GLOB SOURCE_FILES directx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
     add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
+    # options
     if (BUILD_FREE)
       target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
     endif()
@@ -116,17 +104,35 @@ if (MSVC)
       file (GLOB SOURCE_FILES directx12.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx12.cpp)
       add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
+      # options
       if (BUILD_FREE)
         target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
       endif()
       if (BUILD_DOCKING)
         target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
       endif()
+
       target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
       target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
       target_link_libraries (${PROJECT_NAME} PRIVATE d3d12 d3d11 d3dcompiler dxgi)
   endif()
-endif()
+else()
+  # gles3 minimal app
+  project (gles3min)
+    file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
+    file (GLOB SOURCE_FILES gles3min.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
+    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+    # option
+    if (BUILD_FREE)
+      target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
+    endif()
+    target_include_directories (${PROJECT_NAME} PUBLIC imgui imgui/backends)
+    add_compile_definitions (GLFW_INCLUDE_ES3=1
+                             IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
+                             IMGUI_IMPL_OPENGL_ES3=1)
+    target_link_libraries (${PROJECT_NAME} imgui glfw GLESv2)
+  endif()
 
 # opengl2 app
 project (opengl2)
@@ -134,12 +140,14 @@ project (opengl2)
   file (GLOB SOURCE_FILES opengl2.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl2.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
+  # options
   if (BUILD_FREE)
     target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
   endif()
   if (BUILD_DOCKING)
     target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
   endif()
+
   target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
   if (MSVC)
@@ -152,12 +160,14 @@ project (opengl3)
   file (GLOB SOURCE_FILES opengl3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
+  # options
   if (BUILD_FREE)
     target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_FREE)
   endif()
   if (BUILD_DOCKING)
     target_compile_definitions (${PROJECT_NAME} PUBLIC BUILD_DOCKING)
   endif()
+
   target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
   if (MSVC)
