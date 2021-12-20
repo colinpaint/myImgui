@@ -13,91 +13,92 @@
 #include "imgui_impl_opengl3.h"
 //}}}
 
-const float pi2 = 6.28318530718f;
-//{{{
-// Needs to be *exactly* the same as version in shader
-struct sUniforms {
-  int mNumInstances = 60;
-  float mRotation = 0.0f;
-  float mRadius = 0.9f;
-  float mSize = 0.025f;
-  };
-//}}}
-//{{{
-const char* vertShaderSource = R"(
-  #version 300 es
-
-  precision highp float;
-  layout (std140) uniform sUniforms {
-    int mNumInstances;
-    float mRotation;
-    float mRadius;
-    float mSize;
+namespace {
+  const float pi2 = 6.28318530718f;
+  //{{{
+  // Needs to be *exactly* the same as version in shader
+  struct sUniforms {
+    int mNumInstances = 60;
+    float mRotation = 0.0f;
+    float mRadius = 0.9f;
+    float mSize = 0.025f;
     };
+  //}}}
+  //{{{
+  const char* vertShaderSource = R"(
+    #version 300 es
 
-  const vec2[3] vertices = vec2[] (
-    vec2 (-1.0, -1.0),
-    vec2 ( 0.0,  2.0),
-    vec2 ( 1.0, -1.0));
+    precision highp float;
+    layout (std140) uniform sUniforms {
+      int mNumInstances;
+      float mRotation;
+      float mRadius;
+      float mSize;
+      };
 
-  const float pi2 = 6.28318530718;
+    const vec2[3] vertices = vec2[] (
+      vec2 (-1.0, -1.0),
+      vec2 ( 0.0,  2.0),
+      vec2 ( 1.0, -1.0));
 
-  out float color;
+    const float pi2 = 6.28318530718;
 
-  void main() {
-    float r = float(gl_InstanceID) * pi2 / float(mNumInstances) + mRotation;
-    float c = cos (r), s = sin(r);
-    mat2 m = mat2 (c, s, -s, c);
-    vec2 v = vec2 (c, s) * mRadius + m * vertices[gl_VertexID] * mSize;
-    gl_Position = vec4 (v.x, v.y, 0.0, 1.0);
-    color = sin ((r - mRotation) / 2.0);
+    out float color;
+
+    void main() {
+      float r = float(gl_InstanceID) * pi2 / float(mNumInstances) + mRotation;
+      float c = cos (r), s = sin(r);
+      mat2 m = mat2 (c, s, -s, c);
+      vec2 v = vec2 (c, s) * mRadius + m * vertices[gl_VertexID] * mSize;
+      gl_Position = vec4 (v.x, v.y, 0.0, 1.0);
+      color = sin ((r - mRotation) / 2.0);
+      }
+    )";
+  //}}}
+  //{{{
+  const char* fragShaderSource = R"(
+
+    #version 300 es
+
+    precision highp float;
+
+    in float color;
+    out vec4 fragColor;
+
+    void main() {
+      fragColor = vec4 (1.0, color, 1.0 - color,1.0);
+      }
+    )";
+  //}}}
+  //{{{
+  GLuint compileShader (GLenum type, const char* source) {
+
+    GLuint shader = glCreateShader (type);
+    glShaderSource (shader, 1, &source, nullptr);
+    glCompileShader (shader);
+    GLint status = 0;
+    glGetShaderiv (shader, GL_COMPILE_STATUS, &status);
+    if (status == GL_TRUE)
+      return shader;
+
+    // failed
+    char log[256];
+    glGetShaderInfoLog (shader, sizeof(log), nullptr, log);
+    printf ("Compile shader failed:%s\n", log);
+    exit (1);
     }
-  )";
-//}}}
-//{{{
-const char* fragShaderSource = R"(
-
-  #version 300 es
-
-  precision highp float;
-
-  in float color;
-  out vec4 fragColor;
-
-  void main() {
-    fragColor = vec4 (1.0, color, 1.0 - color,1.0);
-    }
-  )";
-//}}}
-
-//{{{
-GLuint compileShader (GLenum type, const char* source) {
-
-  GLuint shader = glCreateShader(type);
-  glShaderSource (shader, 1, &source, nullptr);
-  glCompileShader (shader);
-  GLint status = 0;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-  if (status == GL_TRUE)
-    return shader;
-
-  // Failed!
-  char log[256];
-  glGetShaderInfoLog (shader, sizeof(log), nullptr, log);
-  printf ("Compile shader failed:%s\n", log);
-  exit( 1);
+  //}}}
   }
-//}}}
 
 int main() {
 
   // initialize GLFW and create window/GL context
   glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-  GLFWwindow* window = glfwCreateWindow(1280, 720, "Awesome Raspberry Pi 400 Demo!", NULL, NULL);
-  glfwMakeContextCurrent(window);
+  glfwWindowHint (GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint (GLFW_CONTEXT_VERSION_MINOR, 1);
+  glfwWindowHint (GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+  GLFWwindow* window = glfwCreateWindow (1280, 720, "raspberry pi 4 - imgui + shader demo", NULL, NULL);
+  glfwMakeContextCurrent (window);
 
   #ifdef BUILD_FREE
     glfwSwapInterval (0); // disable vsync
@@ -131,11 +132,11 @@ int main() {
   sUniforms uniforms;
   bool demo = true;
 
-  // Main loop - time to rock and roll!
-  while (!glfwWindowShouldClose(window)) {
+  // main UI loop
+  while (!glfwWindowShouldClose (window)) {
     glfwPollEvents();
 
-    // Tell ImGui we're starting a new frame
+    // start new frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -143,7 +144,7 @@ int main() {
     if (demo)
       ImGui::ShowDemoWindow (&demo);
 
-    // Allow user to update uniforms
+    // update uniforms
     ImGui::SliderInt ("Instances", &uniforms.mNumInstances, 6, 360);
     ImGui::SliderFloat ("Rotation", &uniforms.mRotation, 0.0f, pi2);
     ImGui::SliderFloat ("Radius", &uniforms.mRadius, 0.0f, 1.0f);
@@ -151,18 +152,19 @@ int main() {
 
     ImGui::Render();
 
-    // clear the draw buffer
+    // clear draw buffer
     glClear (GL_COLOR_BUFFER_BIT);
 
     // upload uniform data to shader
     glBufferData (GL_UNIFORM_BUFFER, sizeof(uniforms), &uniforms, GL_STREAM_DRAW);
 
-    // render our stuff!
+    // render our stuff
     glDrawArraysInstanced (GL_TRIANGLES, 0, 3, uniforms.mNumInstances);
 
+    // render imgui stuff!
     ImGui_ImplOpenGL3_RenderDrawData (ImGui::GetDrawData());
 
-    // Flip
+    // flip
     glfwSwapBuffers (window);
     }
   }
