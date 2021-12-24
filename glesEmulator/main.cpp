@@ -427,7 +427,10 @@ int main(int argc, char **argv) {
 
   // EGL Context
   EGLint aEGLContextAttributes[] = {
-    EGL_CONTEXT_CLIENT_VERSION, 2,
+    //EGL_CONTEXT_CLIENT_VERSION, 3,
+    EGL_CONTEXT_MAJOR_VERSION, 3,
+    EGL_CONTEXT_MINOR_VERSION, 0,
+    //EGL_CONTEXT_CLIENT_VERSION, 2,
     EGL_NONE
     };
   EGLContext sEGLContext = EGL_CHECK (eglCreateContext (sEGLDisplay, aEGLConfigs[0], EGL_NO_CONTEXT, aEGLContextAttributes));
