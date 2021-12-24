@@ -60,12 +60,6 @@ project (imgui)
   target_include_directories (${PROJECT_NAME} PUBLIC imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
 
-  if (MSVC)
-    target_link_libraries (${PROJECT_NAME} PRIVATE opengl32 glfw glad)
-  else()
-    target_link_libraries (${PROJECT_NAME} PRIVATE GL glfw glad)
-  endif()
-
 # implot lib
 project (implot)
   file (GLOB HEADER_FILES implot/*.h)
@@ -74,6 +68,15 @@ project (implot)
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
 
 if (MSVC)
+  # gles3 emulator minimal app
+  project (gles3emulator)
+    file (GLOB SOURCE_FILES glesEmulator/main.cpp)
+    add_executable (${PROJECT_NAME} ${SOURCE_FILES})
+
+    target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
+    target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator)
+    target_link_libraries (${PROJECT_NAME} PRIVATE libGLESv2 libEGL opengl32)
+
   # dx11 app
   project (dx11)
     file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
@@ -81,7 +84,7 @@ if (MSVC)
     add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
     target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler glad opengl32)
 
   # dx12 app
   if (BUILD_DX12)
@@ -91,23 +94,30 @@ if (MSVC)
       add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
       target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi)
+      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi glad opengl32)
+  endif()
+endif()
+
+# gles3 minimal app
+project (gles3)
+  file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
+  file (GLOB SOURCE_FILES gles3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
+  add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+  target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+  target_compile_definitions (${PROJECT_NAME} PRIVATE GLFW_INCLUDE_ES3=1
+                                                      IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
+                                                      IMGUI_IMPL_OPENGL_ES3=1)
+  if (MSVC)
+    # use arm GLES emulator
+    target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
+    target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator)
+    target_link_libraries (${PROJECT_NAME} PRIVATE imgui implot glfw libGLESv2 libEGL glad opengl32)
+  else()
+    target_link_libraries (${PROJECT_NAME} imgui implot glfw GLESv2 glad)
   endif()
 
-# not MSVC
-else()
-  # gles3 minimal app
-  project (gles3)
-    file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
-    file (GLOB SOURCE_FILES gles3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
-    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-    target_compile_definitions (${PROJECT_NAME} PRIVATE GLFW_INCLUDE_ES3=1
-                                                        IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
-                                                        IMGUI_IMPL_OPENGL_ES3=1)
-    target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-    target_link_libraries (${PROJECT_NAME} imgui implot glfw GLESv2)
-  endif()
 
 # gl2 app
 project (gl2)
@@ -117,9 +127,9 @@ project (gl2)
 
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
   if (MSVC)
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw d3d11 d3dcompiler glad opengl32)
   else()
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw GL glad)
   endif()
 
 # gl3 app
@@ -129,7 +139,7 @@ project (gl3)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   if (MSVC)
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw d3d11 d3dcompiler glad opengl32)
   else()
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw GL glad)
   endif()
