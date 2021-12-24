@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "GLES2/gl2.h"
-#include "EGL/egl.h"
+#include <GLES2/gl2.h>
+#include <EGL/egl.h>
 //}}}
 
 //{{{
@@ -18,26 +18,22 @@ struct vec3 {
   };
 //}}}
 //{{{
-#define GL_CHECK(x) \
-        x; \
-        { \
-          GLenum glError = glGetError(); \
-          if(glError != GL_NO_ERROR) { \
-            fprintf(stderr, "glGetError() = %i (0x%.8x) at line %i\n", glError, glError, __LINE__); \
-            exit(1); \
-          } \
-        }
+#define GL_CHECK(x) x; { \
+  GLenum glError = glGetError(); \
+  if (glError != GL_NO_ERROR) { \
+    fprintf(stderr, "glGetError() = %i (0x%.8x) at line %i\n", glError, glError, __LINE__); \
+    exit(1); \
+    } \
+  }
 //}}}
 //{{{
-#define EGL_CHECK(x) \
-    x; \
-    { \
-        EGLint eglError = eglGetError(); \
-        if(eglError != EGL_SUCCESS) { \
-            fprintf(stderr, "eglGetError() = %i (0x%.8x) at line %i\n", eglError, eglError, __LINE__); \
-            exit(1); \
-        } \
-    }
+#define EGL_CHECK(x) x; { \
+  EGLint eglError = eglGetError(); \
+  if (eglError != EGL_SUCCESS) { \
+    fprintf (stderr, "eglGetError() = %i (0x%.8x) at line %i\n", eglError, eglError, __LINE__); \
+    exit (1); \
+    } \
+  }
 //}}}
 #define M_PI 3.14159265358979323846
 
@@ -165,9 +161,6 @@ const float aColours[] =
 //}}}
 
 //{{{
-/*
- * process_window(): This function handles Windows callbacks.
- */
 LRESULT CALLBACK process_window (HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam) {
 
   switch (uiMsg) {
@@ -186,14 +179,6 @@ LRESULT CALLBACK process_window (HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lP
 }
 //}}}
 //{{{
-/*
- * create_window(): Set up Windows specific bits.
- *
- * uiWidth:  Width of window to create.
- * uiHeight:  Height of window to create.
- *
- * Returns:  Device specific window handle.
- */
 HWND create_window (int uiWidth, int uiHeight) {
 
   WNDCLASS wc;
@@ -274,11 +259,6 @@ void processShader (GLuint* pShader, const char* fileName, GLint shaderType)
 }
 //}}}
 //{{{
-/*
- * Loads the shader source into memory.
- *
- * sFilename: String holding filename to load
- */
 char* load_shader (char* sFilename) {
 
   char *pResult = NULL;
@@ -304,13 +284,6 @@ char* load_shader (char* sFilename) {
   }
 //}}}
 //{{{
-/*
- * Create shader, load in source, compile, dump debug as necessary.
- *
- * pShader: Pointer to return created shader ID.
- * sFilename: Passed-in filename from which to load shader source.
- * iShaderType: Passed to GL, e.g. GL_VERTEX_SHADER.
- */
 void process_shader (GLuint* pShader, char* sFilename, GLint iShaderType) {
 
   GLint iStatus;
@@ -339,10 +312,6 @@ void process_shader (GLuint* pShader, char* sFilename, GLint iShaderType) {
 //}}}
 
 //{{{
-/*
- * Simulates desktop's glRotatef. The matrix is returned in column-major
- * order.
- */
 void rotate_matrix (double angle, double x, double y, double z, float* R) {
 
   double radians, c, s, c1, u[3], length;
@@ -380,9 +349,6 @@ void rotate_matrix (double angle, double x, double y, double z, float* R) {
 }
 //}}}
 //{{{
-/*
- * Simulates gluPerspectiveMatrix
- */
 void perspective_matrix (double fovy, double aspect, double znear, double zfar, float* P) {
 
   int i;
@@ -403,10 +369,6 @@ void perspective_matrix (double fovy, double aspect, double znear, double zfar, 
 }
 //}}}
 //{{{
-/*
- * Multiplies A by B and writes out to C. All matrices are 4x4 and column
- * major. In-place multiplication is supported.
- */
 void multiply_matrix (float* A, float* B, float* C) {
 
   int i, j, k;
@@ -430,23 +392,11 @@ void multiply_matrix (float* A, float* B, float* C) {
 
 int main(int argc, char **argv) {
 
-  GLint iLocPosition = 0;
-  GLint iLocColour, iLocMVP;
-  GLuint uiProgram, uiFragShader, uiVertShader;
-  int bDone = 0;
-
   const unsigned int uiWidth  = 640;
   const unsigned int uiHeight = 480;
 
-  int iXangle = 0, iYangle = 0, iZangle = 0;
-  float aLightPos[] = { 0.0f, 0.0f, -1.0f }; // Light is nearest camera.
-  float aRotate[16], aModelView[16], aPerspective[16], aMVP[16];
-
-  unsigned char* myPixels = (unsigned char*)calloc (1, 128*128*4); // Holds texture data.
-  unsigned char* myPixels2 = (unsigned char*)calloc (1, 128*128*4); // Holds texture data.
-
   hDisplay = EGL_DEFAULT_DISPLAY;
-  EGLDisplay sEGLDisplay = EGL_CHECK (eglGetDisplay(hDisplay));
+  EGLDisplay sEGLDisplay = EGL_CHECK (eglGetDisplay (hDisplay));
   EGL_CHECK (eglInitialize (sEGLDisplay, NULL, NULL));
 
   // EGL Configuration
@@ -468,12 +418,14 @@ int main(int argc, char **argv) {
 
   hWindow = create_window (uiWidth, uiHeight);
 
+  // EGL Surface
   EGLSurface sEGLSurface = EGL_CHECK (eglCreateWindowSurface (sEGLDisplay, aEGLConfigs[0], (EGLNativeWindowType)hWindow, NULL));
   if (sEGLSurface == EGL_NO_SURFACE) {
     printf ("Failed to create EGL surface.\n");
     exit (-1);
     }
 
+  // EGL Context
   EGLint aEGLContextAttributes[] = {
     EGL_CONTEXT_CLIENT_VERSION, 2,
     EGL_NONE
@@ -486,47 +438,54 @@ int main(int argc, char **argv) {
 
   EGL_CHECK (eglMakeCurrent (sEGLDisplay, sEGLSurface, sEGLSurface, sEGLContext));
 
-  // Shader Initialisation */
+  // Shader Initialisation
+  GLuint uiVertShader;
+  GLuint uiFragShader;
   process_shader (&uiVertShader, "C:/projects/myImgui/glesEmulator/shader.vert", GL_VERTEX_SHADER);
   process_shader (&uiFragShader, "C:/projects/myImgui/glesEmulator/shader.frag", GL_FRAGMENT_SHADER);
 
-  // Create uiProgram (ready to attach shaders) */
-  uiProgram = GL_CHECK (glCreateProgram());
+  // Create program (ready to attach shaders)
+  GLuint uiProgram = GL_CHECK (glCreateProgram());
 
-  // Attach shaders and link uiProgram */
+  // Attach shaders and link uiProgram
   GL_CHECK (glAttachShader (uiProgram, uiVertShader));
   GL_CHECK (glAttachShader (uiProgram, uiFragShader));
   GL_CHECK (glLinkProgram (uiProgram));
 
-  // Get attribute locations of non-fixed attributes like colour and texture coordinates. */
-  iLocPosition = GL_CHECK (glGetAttribLocation (uiProgram, "av4position"));
-  iLocColour = GL_CHECK (glGetAttribLocation (uiProgram, "av3colour"));
-  printf("iLocPosition = %i\n", iLocPosition);
-  printf("iLocColour   = %i\n", iLocColour);
+  // Get attribute locations of non-fixed attributes like colour and texture coordinates.
+  GLuint iLocPosition = GL_CHECK (glGetAttribLocation (uiProgram, "av4position"));
+  GLuint iLocColour = GL_CHECK (glGetAttribLocation (uiProgram, "av3colour"));
+  printf ("iLocPosition = %i\n", iLocPosition);
+  printf ("iLocColour = %i\n", iLocColour);
 
-  // Get uniform locations */
-  iLocMVP = GL_CHECK (glGetUniformLocation (uiProgram, "mvp"));
-  printf("iLocMVP      = %i\n", iLocMVP);
+  // Get uniform locations
+  GLuint iLocMVP = GL_CHECK (glGetUniformLocation (uiProgram, "mvp"));
+  printf("iLocMVP = %i\n", iLocMVP);
 
   GL_CHECK (glUseProgram (uiProgram));
 
-  /* Enable attributes for position, colour and texture coordinates etc. */
+  // Enable attributes for position, colour and texture coordinates etc.
   GL_CHECK (glEnableVertexAttribArray (iLocPosition));
   GL_CHECK (glEnableVertexAttribArray (iLocColour));
 
-  /* Populate attributes for position, colour and texture coordinates etc. */
+  // Populate attributes for position, colour and texture coordinates etc.
   GL_CHECK (glVertexAttribPointer (iLocPosition, 3, GL_FLOAT, GL_FALSE, 0, aVertices));
   GL_CHECK (glVertexAttribPointer (iLocColour, 3, GL_FLOAT, GL_FALSE, 0, aColours));
 
   GL_CHECK (glEnable (GL_CULL_FACE));
   GL_CHECK (glEnable (GL_DEPTH_TEST));
 
+  int iXangle = 0, iYangle = 0, iZangle = 0;
+  float aLightPos[] = { 0.0f, 0.0f, -1.0f }; // Light is nearest camera.
+  float aRotate[16], aModelView[16], aPerspective[16], aMVP[16];
+
   // Enter event loop
   MSG sMessage;
+  bool bDone = false;
   while (!bDone) {
     if (PeekMessage (&sMessage, NULL, 0, 0, PM_REMOVE)) {
       if (sMessage.message == WM_QUIT)
-        bDone = 1;
+        bDone = true;
       else {
         TranslateMessage (&sMessage);
         DispatchMessage (&sMessage);
@@ -544,17 +503,18 @@ int main(int argc, char **argv) {
     GL_CHECK (glUniformMatrix4fv (iLocMVP, 1, GL_FALSE, aMVP));
 
     iXangle += 3;
-    iYangle += 2;
-    iZangle += 1;
-
     if (iXangle >= 360)
       iXangle -= 360;
     if (iXangle < 0)
       iXangle += 360;
+
+    iYangle += 2;
     if (iYangle >= 360)
       iYangle -= 360;
     if (iYangle < 0)
       iYangle += 360;
+
+    iZangle += 1;
     if (iZangle >= 360)
       iZangle -= 360;
     if (iZangle < 0)
@@ -569,17 +529,17 @@ int main(int argc, char **argv) {
     Sleep (20);
     }
 
-  // Cleanup shaders */
-  GL_CHECK (glUseProgram(0));
-  GL_CHECK (glDeleteShader(uiVertShader));
-  GL_CHECK (glDeleteShader(uiFragShader));
-  GL_CHECK (glDeleteProgram(uiProgram));
+  // Cleanup shaders
+  GL_CHECK (glUseProgram (0));
+  GL_CHECK (glDeleteShader (uiVertShader));
+  GL_CHECK (glDeleteShader (uiFragShader));
+  GL_CHECK (glDeleteProgram (uiProgram));
 
-  // EGL clean up */
-  EGL_CHECK (eglMakeCurrent(sEGLDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
-  EGL_CHECK (eglDestroySurface(sEGLDisplay, sEGLSurface));
-  EGL_CHECK (eglDestroyContext(sEGLDisplay, sEGLContext));
-  EGL_CHECK (eglTerminate(sEGLDisplay));
+  // EGL clean up
+  EGL_CHECK (eglMakeCurrent (sEGLDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
+  EGL_CHECK (eglDestroySurface (sEGLDisplay, sEGLSurface));
+  EGL_CHECK (eglDestroyContext (sEGLDisplay, sEGLContext));
+  EGL_CHECK (eglTerminate (sEGLDisplay));
 
   return 0;
   }

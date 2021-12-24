@@ -10,8 +10,11 @@ set (BUILD_VSYNC "VSYNC" CACHE STRING "Build imgui vsync option")
 #
 option (BUILD_DX12 "Build dx12" ON)
 #
-set (COMPILE_MSVC "/arch:AVX" CACHE STRING "msvc compile options")
-set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
+if (MSVC)
+  set (COMPILE_MSVC "/arch:AVX" CACHE STRING "msvc compile options")
+else()
+  set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
+endif()
 #
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 
@@ -70,11 +73,9 @@ project (implot)
 if (MSVC)
   # gles3 emulator minimal app
   project (gles3emulator)
-    file (GLOB SOURCE_FILES glesEmulator/main.cpp)
-    add_executable (${PROJECT_NAME} ${SOURCE_FILES})
-
+    add_executable (${PROJECT_NAME} glesEmulator/main.cpp)
     target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
-    target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator)
+    target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator/lib)
     target_link_libraries (${PROJECT_NAME} PRIVATE libGLESv2 libEGL opengl32)
 
   # dx11 app
@@ -98,7 +99,7 @@ if (MSVC)
   endif()
 endif()
 
-# gles3 minimal app
+# gles3 app
 project (gles3)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
   file (GLOB SOURCE_FILES gles3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
@@ -111,13 +112,11 @@ project (gles3)
   if (MSVC)
     # use arm GLES emulator
     target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
-    target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator)
-    target_link_libraries (${PROJECT_NAME} PRIVATE imgui implot glfw libGLESv2 libEGL glad opengl32)
+    target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator/lib)
+    target_link_libraries (${PROJECT_NAME} PRIVATE imgui implot glfw libGLESv2 libEGL opengl32)
   else()
     target_link_libraries (${PROJECT_NAME} imgui implot glfw GLESv2 glad)
   endif()
-
-
 
 # gl2 app
 project (gl2)
