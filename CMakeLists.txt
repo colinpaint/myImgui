@@ -8,9 +8,9 @@ set (BUILD_GRAPHICS "GL_3" CACHE STRING "build graphics option")
 set (BUILD_DOCKING "DOCKING" CACHE STRING "Build imgui docking option")
 set (BUILD_VSYNC "VSYNC" CACHE STRING "Build imgui vsync option")
 #
-option (BUILD_DX12 "Build dx12" ON)
-#
 if (MSVC)
+  option (BUILD_DX11 "Build dx11" OFF)
+  option (BUILD_DX12 "Build dx12" OFF)
   set (COMPILE_MSVC "/arch:AVX" CACHE STRING "msvc compile options")
 else()
   set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
@@ -78,14 +78,16 @@ if (MSVC)
     target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator/lib)
     target_link_libraries (${PROJECT_NAME} PRIVATE libGLESv2 libEGL opengl32)
 
-  # dx11 app
-  project (dx11)
-    file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
-    file (GLOB SOURCE_FILES dx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
-    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+  # dx11 app - optioned to shutup virus checker
+  if (BUILD_DX11)
+    project (dx11)
+      file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
+      file (GLOB SOURCE_FILES dx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
+      add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-    target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler glad opengl32)
+      target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler glad opengl32)
+  endif()
 
   # dx12 app
   if (BUILD_DX12)
