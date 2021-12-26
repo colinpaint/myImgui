@@ -604,11 +604,11 @@ bool ImGui_ImplDX11_CreateDeviceObjects() {
     }";
 
   ID3DBlob* vertexShaderBlob;
-  if (FAILED(D3DCompile (vertexShader, strlen(vertexShader), 
+  if (FAILED(D3DCompile (vertexShader, strlen(vertexShader),
                          NULL, NULL, NULL, "main", "vs_4_0", 0, 0,
                          &vertexShaderBlob, NULL)))
     return false; // NB: Pass ID3DBlob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-  if (bd->pd3dDevice->CreateVertexShader (vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), NULL, 
+  if (bd->pd3dDevice->CreateVertexShader (vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), NULL,
                                           &bd->pVertexShader) != S_OK) {
     vertexShaderBlob->Release();
     return false;
@@ -621,9 +621,9 @@ bool ImGui_ImplDX11_CreateDeviceObjects() {
     { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, (UINT)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-  if (bd->pd3dDevice->CreateInputLayout (local_layout, 3, 
-                                         vertexShaderBlob->GetBufferPointer(), 
-                                         vertexShaderBlob->GetBufferSize(), 
+  if (bd->pd3dDevice->CreateInputLayout (local_layout, 3,
+                                         vertexShaderBlob->GetBufferPointer(),
+                                         vertexShaderBlob->GetBufferSize(),
                                          &bd->pInputLayout) != S_OK) {
     vertexShaderBlob->Release();
     return false;
@@ -663,11 +663,11 @@ bool ImGui_ImplDX11_CreateDeviceObjects() {
     }";
 
   ID3DBlob* pixelShaderBlob;
-  if (FAILED(D3DCompile (pixelShader, strlen(pixelShader), 
+  if (FAILED(D3DCompile (pixelShader, strlen(pixelShader),
                          NULL, NULL, NULL, "main", "ps_4_0", 0, 0,
                          &pixelShaderBlob, NULL)))
     return false; // NB: Pass ID3DBlob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-  if (bd->pd3dDevice->CreatePixelShader (pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), NULL, 
+  if (bd->pd3dDevice->CreatePixelShader (pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), NULL,
                                          &bd->pPixelShader) != S_OK) {
     pixelShaderBlob->Release();
     return false;
@@ -734,51 +734,87 @@ bool ImGui_ImplDX11_CreateDeviceObjects() {
 void ImGui_ImplDX11_InvalidateDeviceObjects() {
 
   ImGui_ImplDX11_Data* bd = ImGui_ImplDX11_GetBackendData();
-  if (!bd->pd3dDevice)
-      return;
 
-  if (bd->pFontSampler)           {
+  if (!bd->pd3dDevice)
+    return;
+
+  if (bd->pFontSampler) {
+    //{{{  release
     bd->pFontSampler->Release();
     bd->pFontSampler = NULL;
     }
-  if (bd->pFontTextureView)       {
+    //}}}
+  if (bd->pFontTextureView) {
+    //{{{  release
     bd->pFontTextureView->Release();
     bd->pFontTextureView = NULL;
-    ImGui::GetIO().Fonts->SetTexID(NULL);
-    } // We copied data->pFontTextureView to io.Fonts->TexID so let's clear that as well.
-  if (bd->pIB)                    {
+
+    //}}}
+    // We copied data->pFontTextureView to io.Fonts->TexID so let's clear that as well.
+    ImGui::GetIO().Fonts->SetTexID (NULL);
+    } 
+
+  if (bd->pIB) {
+    //{{{  release
     bd->pIB->Release();
-    bd->pIB = NULL; }
-  if (bd->pVB)                    {
+    bd->pIB = NULL; 
+    }
+    //}}}
+  if (bd->pVB) {
+    //{{{  release
     bd->pVB->Release();
-    bd->pVB = NULL; }
-  if (bd->pBlendState)            {
+    bd->pVB = NULL; 
+    }
+    //}}}
+
+  if (bd->pBlendState) {
+    //{{{  release
     bd->pBlendState->Release();
-    bd->pBlendState = NULL; }
-  if (bd->pDepthStencilState)     {
+    bd->pBlendState = NULL; 
+    }
+    //}}}
+
+  if (bd->pDepthStencilState) {
+    //{{{  release
     bd->pDepthStencilState->Release();
     bd->pDepthStencilState = NULL;
     }
-  if (bd->pRasterizerState)       {
+    //}}}
+
+  if (bd->pRasterizerState) {
+    //{{{  release
     bd->pRasterizerState->Release();
     bd->pRasterizerState = NULL;
     }
-  if (bd->pPixelShader)           {
+    //}}}
+
+  if (bd->pPixelShader) {
+    //{{{  release
     bd->pPixelShader->Release();
     bd->pPixelShader = NULL;
     }
-  if (bd->pVertexConstantBuffer)  {
+    //}}}
+
+  if (bd->pVertexConstantBuffer) {
+    //{{{  release
     bd->pVertexConstantBuffer->Release();
     bd->pVertexConstantBuffer = NULL;
     }
-  if (bd->pInputLayout)           {
+    //}}}
+
+  if (bd->pInputLayout) {
+    //{{{  release
     bd->pInputLayout->Release();
     bd->pInputLayout = NULL;
     }
-  if (bd->pVertexShader)          {
+    //}}}
+
+  if (bd->pVertexShader) {
+    //{{{  release
     bd->pVertexShader->Release();
     bd->pVertexShader = NULL;
     }
+    //}}}
   }
 //}}}
 
