@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.18)
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 #
-# valid options - GL_2 GL_3
+# valid options - GL_2 GL_3 VULKAN
 set (BUILD_GRAPHICS "GL_3" CACHE STRING "build graphics option")
 set (BUILD_DOCKING "DOCKING" CACHE STRING "Build imgui docking option")
 set (BUILD_VSYNC "VSYNC" CACHE STRING "Build imgui vsync option")
@@ -19,7 +19,7 @@ endif()
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 
 # utils lib
-project (utils)
+project (utils C CXX)
   file (GLOB HEADER_FILES utils/*.h)
   file (GLOB SOURCE_FILES utils/*.cpp utils/*.c)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
@@ -53,7 +53,7 @@ elseif (BUILD_GRAPHICS STREQUAL "GL_3")
 endif()
 
 # imgui glfw lib
-project (imgui)
+project (imgui C CXX)
   file (GLOB HEADER_FILES imgui/*.h)
   file (GLOB SOURCE_FILES imgui/*.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
@@ -64,15 +64,15 @@ project (imgui)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
 
 # implot lib
-project (implot)
+project (implot C CXX)
   file (GLOB HEADER_FILES implot/*.h)
   file (GLOB SOURCE_FILES implot/*.cpp)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
 
 if (MSVC)
-  # gles3 emulator minimal app
-  project (gles3emulator)
+  # gles3 emulator minimal app - windows only
+  project (gles3emulator C CXX)
     add_executable (${PROJECT_NAME} glesEmulator/main.cpp)
     target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
     target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator/lib)
@@ -80,7 +80,7 @@ if (MSVC)
 
   # dx11 app - optioned to shutup virus checker
   if (BUILD_DX11)
-    project (dx11)
+    project (dx11 C CXX)
       file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
       file (GLOB SOURCE_FILES dx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
       add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -91,7 +91,7 @@ if (MSVC)
 
   # dx12 app
   if (BUILD_DX12)
-    project (dx12)
+    project (dx12 C CXX)
       file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx12.h)
       file (GLOB SOURCE_FILES dx12.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx12.cpp)
       add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -99,10 +99,32 @@ if (MSVC)
       target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
       target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi glad opengl32)
   endif()
+
+else()
+  # vulkan app - linux only
+  if (NOT CMAKE_BUILD_TYPE)
+    set (CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
+  endif()
+
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
+
+  project (vulkan C CXX)
+    file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_vulkan.h)
+    file (GLOB SOURCE_FILES vulkan.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_vulkan.cpp)
+    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+    find_package (Vulkan REQUIRED)
+    #set (LIBRARIES "glfw;Vulkan::Vulkan")
+    include_directories (${GLFW_DIR}/deps)
+
+    target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw Vulkan::Vulkan)
+
 endif()
 
 # gles3 app
-project (gles3)
+project (gles3 C CXX)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
   file (GLOB SOURCE_FILES gles3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -121,7 +143,7 @@ project (gles3)
   endif()
 
 # gl2 app
-project (gl2)
+project (gl2 C CXX)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl2.h)
   file (GLOB SOURCE_FILES gl2.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl2.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -134,7 +156,7 @@ project (gl2)
   endif()
 
 # gl3 app
-project (gl3)
+project (gl3 C CXX)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl3.h)
   file (GLOB SOURCE_FILES gl3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
