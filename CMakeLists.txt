@@ -5,8 +5,8 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 #
 # valid options - GL_2 GL_3 VULKAN
 set (BUILD_GRAPHICS "GL_3" CACHE STRING "build graphics option")
-set (BUILD_DOCKING "DOCKING" CACHE STRING "Build imgui docking option")
 set (BUILD_VSYNC "VSYNC" CACHE STRING "Build imgui vsync option")
+set (BUILD_DOCKING "DOCKING" CACHE STRING "Build imgui docking option")
 #
 if (MSVC)
   option (BUILD_DX11 "Build dx11" OFF)
@@ -17,6 +17,7 @@ else()
 endif()
 #
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
+#set (CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
 
 # utils lib
 project (utils C CXX)
@@ -59,7 +60,7 @@ project (imgui C CXX)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
   target_include_directories (${PROJECT_NAME} PUBLIC . glfw/include)
-  target_compile_definitions (${PROJECT_NAME} PUBLIC ${BUILD_GRAPHICS} ${BUILD_DOCKING} ${BUILD_VSYNC})
+  target_compile_definitions (${PROJECT_NAME} PUBLIC  ${BUILD_VSYNC} ${BUILD_DOCKING})
   target_include_directories (${PROJECT_NAME} PUBLIC imgui imgui/backends)
   target_link_libraries (${PROJECT_NAME} PUBLIC utils)
 
@@ -102,23 +103,14 @@ if (MSVC)
 
 else()
   # vulkan app - linux only
-  if (NOT CMAKE_BUILD_TYPE)
-    set (CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
-  endif()
-
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
-
   project (vulkan C CXX)
     file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_vulkan.h)
     file (GLOB SOURCE_FILES vulkan.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_vulkan.cpp)
     add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
     find_package (Vulkan REQUIRED)
-    #set (LIBRARIES "glfw;Vulkan::Vulkan")
-    include_directories (${GLFW_DIR}/deps)
-
-    target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+    target_compile_definitions (${PROJECT_NAME} PRIVATE VK_PROTOTYPES)
+    #target_include_directories (${PROJECT_NAME} PRIVATE implot imgui glfw/deps)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw Vulkan::Vulkan)
 
 endif()
