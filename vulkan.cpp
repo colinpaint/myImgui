@@ -74,7 +74,7 @@ static bool                     gSwapChainRebuild = false;
 #endif
 
 //{{{
-static void glfw_error_callback (int error, const char* description) {
+static void glfwErrorCallback (int error, const char* description) {
   fprintf (stderr, "Glfw Error %d: %s\n", error, description);
   }
 //}}}
@@ -94,13 +94,13 @@ static void checkVkResult (VkResult err) {
 //{{{
 static void setupVulkan (const char** extensions, uint32_t numExtensions) {
 
-  VkResult err;
-
   // create Vulkan Instance
   VkInstanceCreateInfo instanceCreateInfo = {};
   instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   instanceCreateInfo.enabledExtensionCount = numExtensions;
   instanceCreateInfo.ppEnabledExtensionNames = extensions;
+
+  VkResult err;
 
   #ifdef IMGUI_VULKAN_DEBUG_REPORT
     //{{{  create with validation layers
@@ -285,7 +285,7 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
   vulkanWindow->PresentMode = ImGui_ImplVulkanH_SelectPresentMode (gPhysicalDevice,
                                                                    vulkanWindow->Surface,
                                                                    &present_modes[0], IM_ARRAYSIZE(present_modes));
-  printf("[vulkan] Selected PresentMode = %d\n", vulkanWindow->PresentMode);
+  printf ("[vulkan] Selected PresentMode = %d\n", vulkanWindow->PresentMode);
 
   // Create SwapChain, RenderPass, Framebuffer, etc.
   IM_ASSERT (gMinImageCount >= 2);
@@ -319,14 +319,13 @@ static void cleanupVulkanWindow() {
 //{{{
 static void renderDrawData (ImGui_ImplVulkanH_Window* vulkanWindow, ImDrawData* draw_data) {
 
-  VkResult err;
 
-  VkSemaphore imageAcquiredSemaphore  = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].ImageAcquiredSemaphore;
-  VkSemaphore renderCompleteSemaphore = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].RenderCompleteSemaphore;
+  VkSemaphore imageAcquiredSem = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].ImageAcquiredSemaphore;
+  VkSemaphore renderCompleteSem = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].RenderCompleteSemaphore;
 
-  err = vkAcquireNextImageKHR (gDevice, vulkanWindow->Swapchain, UINT64_MAX,
-                               imageAcquiredSemaphore, VK_NULL_HANDLE, &vulkanWindow->FrameIndex);
-  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+  VkResult err = vkAcquireNextImageKHR (gDevice, vulkanWindow->Swapchain, UINT64_MAX,
+                                        imageAcquiredSem, VK_NULL_HANDLE, &vulkanWindow->FrameIndex);
+  if ((err == VK_ERROR_OUT_OF_DATE_KHR) || (err == VK_SUBOPTIMAL_KHR)) {
     gSwapChainRebuild = true;
     return;
     }
@@ -334,7 +333,7 @@ static void renderDrawData (ImGui_ImplVulkanH_Window* vulkanWindow, ImDrawData* 
 
   ImGui_ImplVulkanH_Frame* vulkanFrame = &vulkanWindow->Frames[vulkanWindow->FrameIndex];
 
- // wait indefinitely instead of periodically checking
+  // wait indefinitely instead of periodically checking
   err = vkWaitForFences (gDevice, 1, &vulkanFrame->Fence, VK_TRUE, UINT64_MAX);
   checkVkResult (err);
 
@@ -372,12 +371,12 @@ static void renderDrawData (ImGui_ImplVulkanH_Window* vulkanWindow, ImDrawData* 
   VkSubmitInfo submitInfo = {};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &imageAcquiredSemaphore;
+  submitInfo.pWaitSemaphores = &imageAcquiredSem;
   submitInfo.pWaitDstStageMask = &pipelineStageFlags;
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &vulkanFrame->CommandBuffer;
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &renderCompleteSemaphore;
+  submitInfo.pSignalSemaphores = &renderCompleteSem;
 
   err = vkEndCommandBuffer (vulkanFrame->CommandBuffer);
   checkVkResult (err);
@@ -392,13 +391,12 @@ static void present (ImGui_ImplVulkanH_Window* vulkanWindow) {
   if (gSwapChainRebuild)
     return;
 
-  VkSemaphore renderCompleteSemaphore =
-    vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].RenderCompleteSemaphore;
+  VkSemaphore renderCompleteSem = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].RenderCompleteSemaphore;
 
   VkPresentInfoKHR info = {};
   info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   info.waitSemaphoreCount = 1;
-  info.pWaitSemaphores = &renderCompleteSemaphore;
+  info.pWaitSemaphores = &renderCompleteSem;
   info.swapchainCount = 1;
   info.pSwapchains = &vulkanWindow->Swapchain;
   info.pImageIndices = &vulkanWindow->FrameIndex;
@@ -420,7 +418,7 @@ static void present (ImGui_ImplVulkanH_Window* vulkanWindow) {
 int main (int, char**) {
 
   // setup GLFW
-  glfwSetErrorCallback (glfw_error_callback);
+  glfwSetErrorCallback (glfwErrorCallback);
   if (!glfwInit())
     return 1;
 
@@ -520,7 +518,7 @@ int main (int, char**) {
   // Our state
   bool show_demo_window = true;
   bool show_another_window = false;
-  ImVec4 clear_color = ImVec4 (0.45f, 0.55f, 0.60f, 1.00f);
+  ImVec4 clearColor = ImVec4 (0.45f, 0.55f, 0.60f, 1.00f);
 
   // Main loop
   while (!glfwWindowShouldClose(window)) {
@@ -531,7 +529,7 @@ int main (int, char**) {
       int width;
       int height;
       glfwGetFramebufferSize (window, &width, &height);
-      if (width > 0 && height > 0) {
+      if ((width > 0) && (height > 0)) {
         ImGui_ImplVulkan_SetMinImageCount (gMinImageCount);
         ImGui_ImplVulkanH_CreateOrResizeWindow (gInstance, gPhysicalDevice, gDevice,
                                                 &gMainWindowData, gQueueFamily,
@@ -550,30 +548,30 @@ int main (int, char**) {
     if (show_demo_window)
       ImGui::ShowDemoWindow (&show_demo_window);
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-      {
-      static float f = 0.0f;
-      static int counter = 0;
+    //{{{  Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+    {
+    static float f = 0.0f;
+    static int counter = 0;
 
-      ImGui::Begin ("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+    ImGui::Begin ("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-      ImGui::Text ("This is some useful text.");               // Display some text (you can use a format strings too)
-      ImGui::Checkbox ("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-      ImGui::Checkbox ("Another Window", &show_another_window);
+    ImGui::Text ("This is some useful text.");               // Display some text (you can use a format strings too)
+    ImGui::Checkbox ("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+    ImGui::Checkbox ("Another Window", &show_another_window);
 
-      ImGui::SliderFloat ("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-      ImGui::ColorEdit3 ("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+    ImGui::SliderFloat ("float", &f, 0.0f, 1.0f);           // Edit 1 float using a slider from 0.0f to 1.0f
+    ImGui::ColorEdit3 ("clear color", (float*)&clearColor); // Edit 3 floats representing a color
 
-      if (ImGui::Button ("Button"))
-        counter++;
-      ImGui::SameLine();
-      ImGui::Text ("counter = %d", counter);
+    if (ImGui::Button ("Button"))
+      counter++;
+    ImGui::SameLine();
+    ImGui::Text ("counter = %d", counter);
 
-      ImGui::Text ("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-      ImGui::End();
-      }
-
-    // 3. Show another simple window.
+    ImGui::Text ("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+    }
+    //}}}
+    //{{{  Show another simple window.
     if (show_another_window) {
       ImGui::Begin ("Another Window", &show_another_window);
       ImGui::Text ("Hello from another window!");
@@ -581,17 +579,18 @@ int main (int, char**) {
         show_another_window = false;
       ImGui::End();
       }
+    //}}}
 
     // Rendering
     ImGui::Render();
-    ImDrawData* main_draw_data = ImGui::GetDrawData();
-    const bool minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
-    vulkanWindow->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-    vulkanWindow->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-    vulkanWindow->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-    vulkanWindow->ClearValue.color.float32[3] = clear_color.w;
+    ImDrawData* drawData = ImGui::GetDrawData();
+    const bool minimized = (drawData->DisplaySize.x <= 0.0f || drawData->DisplaySize.y <= 0.0f);
+    vulkanWindow->ClearValue.color.float32[0] = clearColor.x * clearColor.w;
+    vulkanWindow->ClearValue.color.float32[1] = clearColor.y * clearColor.w;
+    vulkanWindow->ClearValue.color.float32[2] = clearColor.z * clearColor.w;
+    vulkanWindow->ClearValue.color.float32[3] = clearColor.w;
     if (!minimized)
-      renderDrawData (vulkanWindow, main_draw_data);
+      renderDrawData (vulkanWindow, drawData);
 
     #ifdef DOCKING
       if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
