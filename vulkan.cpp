@@ -111,7 +111,8 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
     create_info.enabledLayerCount = 1;
     create_info.ppEnabledLayerNames = layers;
 
-    // Enable debug report extension (we need additional storage, so we duplicate the user array to add our new extension to it)
+    // Enable debug report extension (we need additional storage
+    // , so we duplicate the user array to add our new extension to it)
     const char** extensions_ext = (const char**)malloc (sizeof(const char*) * (extensions_count + 1));
     memcpy (extensions_ext, extensions, extensions_count * sizeof (const char*));
     extensions_ext[extensions_count] = "VK_EXT_debug_report";
@@ -120,8 +121,9 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
 
     // Create Vulkan Instance
     err = vkCreateInstance (&create_info, g_Allocator, &g_Instance);
-    check_vk_result(err);
-    free(extensions_ext);
+
+    check_vk_result (err);
+    free (extensions_ext);
 
     // Get the function pointer (required for any extensions)
     auto vkCreateDebugReportCallbackEXT =
@@ -136,6 +138,7 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
                             VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
     debug_report_ci.pfnCallback = debug_report;
     debug_report_ci.pUserData = NULL;
+
     err = vkCreateDebugReportCallbackEXT (g_Instance, &debug_report_ci, g_Allocator, &g_DebugReport);
     check_vk_result (err);
     //}}}
