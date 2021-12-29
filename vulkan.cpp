@@ -14,10 +14,13 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+
 #include <stdio.h>          // printf, fprintf
 #include <stdlib.h>         // abort
+
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
@@ -25,12 +28,12 @@
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
 // Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
+  #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #ifdef _DEBUG
-#define IMGUI_VULKAN_DEBUG_REPORT
+  #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 //}}}
 //#define IMGUI_VULKAN_DEBUG_REPORT
@@ -60,7 +63,9 @@ static void check_vk_result (VkResult err) {
 
   if (err == 0)
     return;
+
   fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+
   if (err < 0)
     abort();
   }
@@ -101,14 +106,14 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
   create_info.ppEnabledExtensionNames = extensions;
 
   #ifdef IMGUI_VULKAN_DEBUG_REPORT
-    // Enabling validation layers
+    //{{{  Enabling validation layers
     const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
     create_info.enabledLayerCount = 1;
     create_info.ppEnabledLayerNames = layers;
 
     // Enable debug report extension (we need additional storage, so we duplicate the user array to add our new extension to it)
     const char** extensions_ext = (const char**)malloc (sizeof(const char*) * (extensions_count + 1));
-    memcpy(extensions_ext, extensions, extensions_count * sizeof (const char*));
+    memcpy (extensions_ext, extensions, extensions_count * sizeof (const char*));
     extensions_ext[extensions_count] = "VK_EXT_debug_report";
     create_info.enabledExtensionCount = extensions_count + 1;
     create_info.ppEnabledExtensionNames = extensions_ext;
@@ -126,13 +131,14 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
     // Setup the debug report callback
     VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
     debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
+    debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+                            VK_DEBUG_REPORT_WARNING_BIT_EXT |
                             VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
     debug_report_ci.pfnCallback = debug_report;
     debug_report_ci.pUserData = NULL;
     err = vkCreateDebugReportCallbackEXT (g_Instance, &debug_report_ci, g_Allocator, &g_DebugReport);
     check_vk_result (err);
-
+    //}}}
   #else
     // Create Vulkan Instance without any debug feature
     err = vkCreateInstance (&create_info, g_Allocator, &g_Instance);
@@ -148,7 +154,7 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
   check_vk_result (err);
   IM_ASSERT (gpu_count > 0);
 
-  VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
+  VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc (sizeof(VkPhysicalDevice) * gpu_count);
   err = vkEnumeratePhysicalDevices (g_Instance, &gpu_count, gpus);
   check_vk_result (err);
 
@@ -237,8 +243,8 @@ static void SetupVulkan (const char** extensions, uint32_t extensions_count) {
   pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
   pool_info.pPoolSizes = pool_sizes;
 
-  err = vkCreateDescriptorPool(g_Device, &pool_info, g_Allocator, &g_DescriptorPool);
-  check_vk_result(err);
+  err = vkCreateDescriptorPool (g_Device, &pool_info, g_Allocator, &g_DescriptorPool);
+  check_vk_result (err);
   }
   //}}}
   }
@@ -252,10 +258,10 @@ static void SetupVulkanWindow (ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surfac
 
   // Check for WSI support
   VkBool32 res;
-  vkGetPhysicalDeviceSurfaceSupportKHR(g_PhysicalDevice, g_QueueFamily, wd->Surface, &res);
+  vkGetPhysicalDeviceSurfaceSupportKHR (g_PhysicalDevice, g_QueueFamily, wd->Surface, &res);
   if (res != VK_TRUE) {
-    fprintf(stderr, "Error no WSI support on physical device 0\n");
-    exit(-1);
+    fprintf (stderr, "Error no WSI support on physical device 0\n");
+    exit (-1);
     }
 
   // Select Surface Format
@@ -266,21 +272,21 @@ static void SetupVulkanWindow (ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surfac
   const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
   wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat (g_PhysicalDevice, wd->Surface,
                                                              requestSurfaceImageFormat,
-                                                             (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat),
+                                                             (size_t)IM_ARRAYSIZE (requestSurfaceImageFormat),
                                                              requestSurfaceColorSpace);
 
   // Select Present Mode
   #ifdef VSYNC
+    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
+  #else
     VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR,
                                          VK_PRESENT_MODE_IMMEDIATE_KHR,
                                          VK_PRESENT_MODE_FIFO_KHR };
-  #else
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
   #endif
 
   wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode (g_PhysicalDevice, wd->Surface,
                                                          &present_modes[0], IM_ARRAYSIZE(present_modes));
-  //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
+  printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
   // Create SwapChain, RenderPass, Framebuffer, etc.
   IM_ASSERT (g_MinImageCount >= 2);
@@ -324,7 +330,7 @@ static void FrameRender (ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
     g_SwapChainRebuild = true;
     return;
     }
-  check_vk_result(err);
+  check_vk_result (err);
 
   ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
 
@@ -344,6 +350,7 @@ static void FrameRender (ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
     VkCommandBufferBeginInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
     err = vkBeginCommandBuffer (fd->CommandBuffer, &info);
     check_vk_result (err);
     }
@@ -357,7 +364,8 @@ static void FrameRender (ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
     info.renderArea.extent.height = wd->Height;
     info.clearValueCount = 1;
     info.pClearValues = &wd->ClearValue;
-    vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBeginRenderPass (fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
     }
 
   // Record dear imgui primitives into command buffer
@@ -390,9 +398,10 @@ static void FrameRender (ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
 static void FramePresent (ImGui_ImplVulkanH_Window* wd) {
 
   if (g_SwapChainRebuild)
-      return;
+    return;
 
   VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
+
   VkPresentInfoKHR info = {};
   info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   info.waitSemaphoreCount = 1;
@@ -400,6 +409,7 @@ static void FramePresent (ImGui_ImplVulkanH_Window* wd) {
   info.swapchainCount = 1;
   info.pSwapchains = &wd->Swapchain;
   info.pImageIndices = &wd->FrameIndex;
+
   VkResult err = vkQueuePresentKHR (g_Queue, &info);
   if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
     g_SwapChainRebuild = true;
@@ -407,6 +417,7 @@ static void FramePresent (ImGui_ImplVulkanH_Window* wd) {
     }
 
   check_vk_result (err);
+
   wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
   }
 //}}}
