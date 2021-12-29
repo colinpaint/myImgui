@@ -55,10 +55,10 @@ static bool                     gSwapChainRebuild = false;
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
   //{{{
   static VKAPI_ATTR VkBool32 VKAPI_CALL debugReport (VkDebugReportFlagsEXT flags,
-                                                      VkDebugReportObjectTypeEXT objectType,
-                                                      uint64_t object, size_t location,
-                                                      int32_t messageCode,
-                                                      const char* pLayerPrefix, const char* pMessage, void* pUserData) {
+                                                     VkDebugReportObjectTypeEXT objectType,
+                                                     uint64_t object, size_t location,
+                                                     int32_t messageCode,
+                                                     const char* pLayerPrefix, const char* pMessage, void* pUserData) {
 
     (void)flags;
     (void)object;
@@ -533,8 +533,8 @@ int main (int, char**) {
       glfwGetFramebufferSize (window, &width, &height);
       if (width > 0 && height > 0) {
         ImGui_ImplVulkan_SetMinImageCount (gMinImageCount);
-        ImGui_ImplVulkanH_CreateOrResizeWindow (gInstance, gPhysicalDevice, gDevice, 
-                                                &gMainWindowData, gQueueFamily, 
+        ImGui_ImplVulkanH_CreateOrResizeWindow (gInstance, gPhysicalDevice, gDevice,
+                                                &gMainWindowData, gQueueFamily,
                                                 gAllocator, width, height, gMinImageCount);
         gMainWindowData.FrameIndex = 0;
         gSwapChainRebuild = false;
@@ -564,7 +564,7 @@ int main (int, char**) {
       ImGui::SliderFloat ("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
       ImGui::ColorEdit3 ("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-      if (ImGui::Button ("Button"))                         
+      if (ImGui::Button ("Button"))
         counter++;
       ImGui::SameLine();
       ImGui::Text ("counter = %d", counter);
