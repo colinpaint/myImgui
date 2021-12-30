@@ -55,7 +55,7 @@ static bool                     gSwapChainRebuild = false;
     (void)location;
     (void)messageCode;
     (void)pUserData;
-    (void)pLayerPrefix; // Unused arguments
+    (void)pLayerPrefix;
 
     printf ("vkDebugReport type:%i:%s\n", objectType, pMessage);
     return VK_FALSE;
@@ -94,45 +94,47 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
 
   #ifdef VALIDATION
     //{{{  create with validation layers
+    printf ("using validation\n");
+
     const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
     instanceCreateInfo.enabledLayerCount = 1;
     instanceCreateInfo.ppEnabledLayerNames = layers;
 
-    // Enable debug report extension (we need additional storage
-    // , so we duplicate the user array to add our new extension to it)
+    // enable debug report extension (we need additional storage
+    // so we duplicate the user array to add our new extension to it)
     const char** extensionsExt = (const char**)malloc (sizeof(const char*) * (numExtensions + 1));
     memcpy (extensionsExt, extensions, numExtensions * sizeof(const char*));
     extensionsExt[numExtensions] = "VK_EXT_debug_report";
     instanceCreateInfo.enabledExtensionCount = numExtensions + 1;
     instanceCreateInfo.ppEnabledExtensionNames = extensionsExt;
 
-    // Create Vulkan Instance
+    // create vulkanInstance
     result = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
     checkVkResult (result);
     free (extensionsExt);
 
-    // Get the function pointer (required for any extensions)
+    // get function pointer (required for any extensions)
     auto vkCreateDebugReportCallbackEXT =
       (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr (gInstance, "vkCreateDebugReportCallbackEXT");
     IM_ASSERT (vkCreateDebugReportCallbackEXT != NULL);
 
-    // Setup the debug report callback
-    VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
-    debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-                            VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-    debug_report_ci.pfnCallback = debugReport;
-    debug_report_ci.pUserData = NULL;
+    // setup the debugReportCallback
+    VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
+    debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+    debugReportCallbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+                                          VK_DEBUG_REPORT_WARNING_BIT_EXT |
+                                          VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+    debugReportCallbackCreateInfo.pfnCallback = debugReport;
+    debugReportCallbackCreateInfo.pUserData = NULL;
 
-    result = vkCreateDebugReportCallbackEXT (gInstance, &debug_report_ci, gAllocator, &gDebugReport);
+    result = vkCreateDebugReportCallbackEXT (gInstance, &debugReportCallbackCreateInfo, gAllocator, &gDebugReport);
     checkVkResult (result);
     //}}}
   #else
     // create without validation layers
     result = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
     checkVkResult (result);
-    IM_UNUSED (gDebugReport);
+    (void)gDebugReport;
   #endif
 
   //{{{  select gpu
@@ -211,26 +213,26 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
   IM_ASSERT(gQueueFamily != (uint32_t)-1);
   //}}}
   //{{{  create logical device (with 1 queue)
-  int device_extension_count = 1;
+  int numDeviceExtension = 1;
 
-  const char* device_extensions[] = { "VK_KHR_swapchain" };
-  const float queue_priority[] = { 1.0f };
+  const char* deviceExtensions[] = { "VK_KHR_swapchain" };
+  const float queuePriority[] = { 1.0f };
 
   VkDeviceQueueCreateInfo deviceQueueCreateInfo[1] = {};
   deviceQueueCreateInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
   deviceQueueCreateInfo[0].queueFamilyIndex = gQueueFamily;
   deviceQueueCreateInfo[0].queueCount = 1;
-  deviceQueueCreateInfo[0].pQueuePriorities = queue_priority;
+  deviceQueueCreateInfo[0].pQueuePriorities = queuePriority;
 
   VkDeviceCreateInfo deviceCreateInfo = {};
   deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   deviceCreateInfo.queueCreateInfoCount = sizeof(deviceQueueCreateInfo) / sizeof(deviceQueueCreateInfo[0]);
   deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfo;
-  deviceCreateInfo.enabledExtensionCount = device_extension_count;
-  deviceCreateInfo.ppEnabledExtensionNames = device_extensions;
+  deviceCreateInfo.enabledExtensionCount = numDeviceExtension;
+  deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
 
   result = vkCreateDevice (gPhysicalDevice, &deviceCreateInfo, gAllocator, &gDevice);
-  checkVkResult(result);
+  checkVkResult (result);
 
   vkGetDeviceQueue (gDevice, gQueueFamily, 0, &gQueue);
   //}}}
@@ -270,15 +272,15 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
 
   vulkanWindow->Surface = surface;
 
-  // Check for WSI support
-  VkBool32 res;
-  vkGetPhysicalDeviceSurfaceSupportKHR (gPhysicalDevice, gQueueFamily, vulkanWindow->Surface, &res);
-  if (res != VK_TRUE) {
-    printf ("Error no WSI support on physical device 0\n");
+  // check WSI support
+  VkBool32 result;
+  vkGetPhysicalDeviceSurfaceSupportKHR (gPhysicalDevice, gQueueFamily, vulkanWindow->Surface, &result);
+  if (result != VK_TRUE) {
+    printf ("error, no WSI support on physical device\n");
     exit (-1);
     }
 
-  // Select Surface Format
+  // select surfaceFormat
   const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM,
                                                  VK_FORMAT_R8G8B8A8_UNORM,
                                                  VK_FORMAT_B8G8R8_UNORM,
@@ -288,22 +290,23 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
                                                                        vulkanWindow->Surface,
                                                                        requestSurfaceImageFormat,
                                                                        (size_t)IM_ARRAYSIZE (requestSurfaceImageFormat),
-                                                                        requestSurfaceColorSpace);
-// Select Present Mode
+                                                                       requestSurfaceColorSpace);
+// select presentMode
   #ifdef VSYNC
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
+    VkPresentModeKHR presentModes[] = { VK_PRESENT_MODE_FIFO_KHR };
   #else
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR,
-                                         VK_PRESENT_MODE_IMMEDIATE_KHR,
-                                         VK_PRESENT_MODE_FIFO_KHR };
+    VkPresentModeKHR presentModes[] = { VK_PRESENT_MODE_MAILBOX_KHR,
+                                        VK_PRESENT_MODE_IMMEDIATE_KHR,
+                                        VK_PRESENT_MODE_FIFO_KHR };
   #endif
 
   vulkanWindow->PresentMode = ImGui_ImplVulkanH_SelectPresentMode (gPhysicalDevice,
                                                                    vulkanWindow->Surface,
-                                                                   &present_modes[0], IM_ARRAYSIZE(present_modes));
-  printf ("Selected PresentMode = %d\n", vulkanWindow->PresentMode);
+                                                                   &presentModes[0], IM_ARRAYSIZE(presentModes));
 
-  // Create SwapChain, RenderPass, Framebuffer, etc.
+  printf ("use presentMode:%d\n", vulkanWindow->PresentMode);
+
+  // create swapChain, renderPass, framebuffer, etc.
   IM_ASSERT (gMinImageCount >= 2);
   ImGui_ImplVulkanH_CreateOrResizeWindow (gInstance, gPhysicalDevice, gDevice,
                                           vulkanWindow, gQueueFamily, gAllocator, width, height, gMinImageCount);
@@ -478,7 +481,7 @@ int main (int, char**) {
 
   // setup vulkan
   if (!glfwVulkanSupported()) {
-    printf ("GLFW: Vulkan Not Supported\n");
+    printf ("glfw vulkan not supported\n");
     return 1;
     }
 
