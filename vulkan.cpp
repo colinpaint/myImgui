@@ -15,8 +15,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
-#include <stdio.h>  // printf, fprintf
-#include <stdlib.h> // abort
+#include <stdio.h>
+#include <stdlib.h>
 
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
@@ -67,7 +67,7 @@ static bool                     gSwapChainRebuild = false;
     (void)pUserData;
     (void)pLayerPrefix; // Unused arguments
 
-    fprintf (stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
+    printf ("[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
     return VK_FALSE;
     }
   //}}}
@@ -75,18 +75,18 @@ static bool                     gSwapChainRebuild = false;
 
 //{{{
 static void glfwErrorCallback (int error, const char* description) {
-  fprintf (stderr, "Glfw Error %d: %s\n", error, description);
+  printf ("Glfw Error %d: %s\n", error, description);
   }
 //}}}
 //{{{
-static void checkVkResult (VkResult err) {
+static void checkVkResult (VkResult result) {
 
-  if (err == 0)
+  if (result == 0)
     return;
 
-  fprintf (stderr, "[vulkan] Error: VkResult = %d\n", err);
+  printf ("[vulkan] Error: VkResult = %d\n", result);
 
-  if (err < 0)
+  if (result < 0)
     abort();
   }
 //}}}
@@ -100,7 +100,7 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
   instanceCreateInfo.enabledExtensionCount = numExtensions;
   instanceCreateInfo.ppEnabledExtensionNames = extensions;
 
-  VkResult err;
+  VkResult result;
 
   #ifdef IMGUI_VULKAN_DEBUG_REPORT
     //{{{  create with validation layers
@@ -110,16 +110,15 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
 
     // Enable debug report extension (we need additional storage
     // , so we duplicate the user array to add our new extension to it)
-    const char** extensions_ext = (const char**)malloc (sizeof(const char*) * (extensions_count + 1));
-    memcpy (extensions_ext, extensions, extensions_count * sizeof (const char*));
+    const char** extensionsExt = (const char**)malloc (sizeof(const char*) * (numExtensions + 1));
+    memcpy (extensionsExt, extensions, numExtensions * sizeof(const char*));
     extensions_ext[extensions_count] = "VK_EXT_debug_report";
-    instanceCreateInfo.enabledExtensionCount = extensions_count + 1;
-    instanceCreateInfo.ppEnabledExtensionNames = extensions_ext;
+    instanceCreateInfo.enabledExtensionCount = numExtensions + 1;
+    instanceCreateInfo.ppEnabledExtensionNames = extensionsExt;
 
     // Create Vulkan Instance
-    err = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
-
-    checkVkResult (err);
+    result = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
+    checkVkResult (result);
     free (extensions_ext);
 
     // Get the function pointer (required for any extensions)
@@ -136,55 +135,82 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
     debug_report_ci.pfnCallback = debugReport;
     debug_report_ci.pUserData = NULL;
 
-    err = vkCreateDebugReportCallbackEXT (gInstance, &debug_report_ci, gAllocator, &gDebugReport);
-    checkVkResult (err);
+    result = vkCreateDebugReportCallbackEXT (gInstance, &debug_report_ci, gAllocator, &gDebugReport);
+    checkVkResult (result);
     //}}}
   #else
     // create without validation layers
-    err = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
-    checkVkResult (err);
+    result = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
+    checkVkResult (result);
     IM_UNUSED (gDebugReport);
   #endif
 
-  //{{{  select GPU
-  uint32_t gpuCount;
-  err = vkEnumeratePhysicalDevices (gInstance, &gpuCount, NULL);
-  checkVkResult (err);
-  IM_ASSERT (gpuCount > 0);
+  //{{{  select gpu
+  #define VK_API_VERSION_VARIANT(version) ((uint32_t)(version) >> 29)
+  #define VK_API_VERSION_MAJOR(version) (((uint32_t)(version) >> 22) & 0x7FU)
+  #define VK_API_VERSION_MINOR(version) (((uint32_t)(version) >> 12) & 0x3FFU)
+  #define VK_API_VERSION_PATCH(version) ((uint32_t)(version) & 0xFFFU)
 
-  fprintf (stderr, "gpuCount %d\n", gpuCount);
+  uint32_t numGpu;
+  result = vkEnumeratePhysicalDevices (gInstance, &numGpu, NULL);
+  checkVkResult (result);
 
-  VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc (sizeof(VkPhysicalDevice) * gpuCount);
-  err = vkEnumeratePhysicalDevices (gInstance, &gpuCount, gpus);
-  checkVkResult (err);
+  if (!numGpu)
+    printf ("queueFamilyCount zero\n");
+  IM_ASSERT (numGpu > 0);
+
+  VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc (sizeof(VkPhysicalDevice) * numGpu);
+  result = vkEnumeratePhysicalDevices (gInstance, &numGpu, gpus);
+  checkVkResult (result);
+
+  for (uint32_t i = 0; i < numGpu; i++) {
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties (gpus[i], &properties);
+    printf ("gpu:%d var:%d major:%d minor:%d patch:%d type:%d %s api:%x driver:%d\n",
+            (int)i,
+            VK_API_VERSION_VARIANT(properties.apiVersion),
+            VK_API_VERSION_MAJOR(properties.apiVersion),
+            VK_API_VERSION_MINOR(properties.apiVersion),
+            VK_API_VERSION_PATCH(properties.apiVersion),
+            properties.deviceType, properties.deviceName, properties.apiVersion, properties.driverVersion);
+    }
 
   // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available
   // This covers most common cases (multi-gpu/integrated+dedicated graphics)
   // Handling more complicated setups (multiple dedicated GPUs) is out of scope of this sample.
-  int use_gpu = 0;
-  for (int i = 0; i < (int)gpuCount; i++) {
+  int useGpu = 0;
+  for (uint32_t i = 0; i < numGpu; i++) {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties (gpus[i], &properties);
     if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-      use_gpu = i;
+      useGpu = i;
       break;
       }
     }
 
-  gPhysicalDevice = gpus[use_gpu];
+  gPhysicalDevice = gpus[useGpu];
+  printf ("useGpu:%d\n", (int)useGpu);
 
   free (gpus);
   //}}}
   //{{{  select graphics queue family
-  uint32_t queueFamilyCount;
-  vkGetPhysicalDeviceQueueFamilyProperties (gPhysicalDevice, &queueFamilyCount, NULL);
-  fprintf (stderr, "queueFamilyCount %d\n", queueFamilyCount);
+  uint32_t numQueueFamily;
+  vkGetPhysicalDeviceQueueFamilyProperties (gPhysicalDevice, &numQueueFamily, NULL);
+
+  if (!numQueueFamily)
+    printf ("queueFamilyCount zero\n");
 
   VkQueueFamilyProperties* queueFamilyProperties =
-    (VkQueueFamilyProperties*)malloc (sizeof(VkQueueFamilyProperties) * queueFamilyCount);
-  vkGetPhysicalDeviceQueueFamilyProperties (gPhysicalDevice, &queueFamilyCount, queueFamilyProperties);
+    (VkQueueFamilyProperties*)malloc (sizeof(VkQueueFamilyProperties) * numQueueFamily);
+  vkGetPhysicalDeviceQueueFamilyProperties (gPhysicalDevice, &numQueueFamily, queueFamilyProperties);
 
-  for (uint32_t i = 0; i < queueFamilyCount; i++)
+  for (uint32_t i = 0; i < numQueueFamily; i++)
+    printf ("queue:%d count:%d queueFlags:%x\n",
+             i,
+             queueFamilyProperties[i].queueCount,
+             queueFamilyProperties[i].queueFlags);
+
+  for (uint32_t i = 0; i < numQueueFamily; i++)
     if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
       gQueueFamily = i;
       break;
@@ -194,7 +220,7 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
 
   IM_ASSERT(gQueueFamily != (uint32_t)-1);
   //}}}
-  //{{{  create Logical Device (with 1 queue)
+  //{{{  create logical device (with 1 queue)
   int device_extension_count = 1;
 
   const char* device_extensions[] = { "VK_KHR_swapchain" };
@@ -213,12 +239,12 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
   deviceCreateInfo.enabledExtensionCount = device_extension_count;
   deviceCreateInfo.ppEnabledExtensionNames = device_extensions;
 
-  err = vkCreateDevice (gPhysicalDevice, &deviceCreateInfo, gAllocator, &gDevice);
-  checkVkResult(err);
+  result = vkCreateDevice (gPhysicalDevice, &deviceCreateInfo, gAllocator, &gDevice);
+  checkVkResult(result);
 
   vkGetDeviceQueue (gDevice, gQueueFamily, 0, &gQueue);
   //}}}
-  //{{{  create Descriptor Pool
+  //{{{  create descriptor pool
   {
   VkDescriptorPoolSize descriptorPoolSizes[] = {
     { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -241,8 +267,8 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
   descriptorPoolCreateInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(descriptorPoolSizes);
   descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes;
 
-  err = vkCreateDescriptorPool (gDevice, &descriptorPoolCreateInfo, gAllocator, &gDescriptorPool);
-  checkVkResult (err);
+  result = vkCreateDescriptorPool (gDevice, &descriptorPoolCreateInfo, gAllocator, &gDescriptorPool);
+  checkVkResult (result);
   }
   //}}}
   }
@@ -258,7 +284,7 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
   VkBool32 res;
   vkGetPhysicalDeviceSurfaceSupportKHR (gPhysicalDevice, gQueueFamily, vulkanWindow->Surface, &res);
   if (res != VK_TRUE) {
-    fprintf (stderr, "Error no WSI support on physical device 0\n");
+    printf ("Error no WSI support on physical device 0\n");
     exit (-1);
     }
 
@@ -293,6 +319,39 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
                                           vulkanWindow, gQueueFamily, gAllocator, width, height, gMinImageCount);
   }
 //}}}
+//{{{
+static void uploadFonts (ImGui_ImplVulkanH_Window* vulkanWindow) {
+//  upload Fonts
+
+  VkCommandPool commandPool = vulkanWindow->Frames[vulkanWindow->FrameIndex].CommandPool;
+  VkCommandBuffer commandBuffer = vulkanWindow->Frames[vulkanWindow->FrameIndex].CommandBuffer;
+
+  VkResult result = vkResetCommandPool (gDevice, commandPool, 0);
+  checkVkResult (result);
+
+  VkCommandBufferBeginInfo begin_info = {};
+  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  result = vkBeginCommandBuffer (commandBuffer, &begin_info);
+  checkVkResult (result);
+
+  ImGui_ImplVulkan_CreateFontsTexture (commandBuffer);
+
+  VkSubmitInfo endSubmitInfo = {};
+  endSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  endSubmitInfo.commandBufferCount = 1;
+  endSubmitInfo.pCommandBuffers = &commandBuffer;
+  result = vkEndCommandBuffer (commandBuffer);
+  checkVkResult (result);
+
+  result = vkQueueSubmit (gQueue, 1, &endSubmitInfo, VK_NULL_HANDLE);
+  checkVkResult (result);
+
+  result = vkDeviceWaitIdle (gDevice);
+  checkVkResult (result);
+  ImGui_ImplVulkan_DestroyFontUploadObjects();
+  }
+//}}}
 
 //{{{
 static void cleanupVulkan() {
@@ -323,32 +382,32 @@ static void renderDrawData (ImGui_ImplVulkanH_Window* vulkanWindow, ImDrawData* 
   VkSemaphore imageAcquiredSem = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].ImageAcquiredSemaphore;
   VkSemaphore renderCompleteSem = vulkanWindow->FrameSemaphores[vulkanWindow->SemaphoreIndex].RenderCompleteSemaphore;
 
-  VkResult err = vkAcquireNextImageKHR (gDevice, vulkanWindow->Swapchain, UINT64_MAX,
+  VkResult result = vkAcquireNextImageKHR (gDevice, vulkanWindow->Swapchain, UINT64_MAX,
                                         imageAcquiredSem, VK_NULL_HANDLE, &vulkanWindow->FrameIndex);
-  if ((err == VK_ERROR_OUT_OF_DATE_KHR) || (err == VK_SUBOPTIMAL_KHR)) {
+  if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
     gSwapChainRebuild = true;
     return;
     }
-  checkVkResult (err);
+  checkVkResult (result);
 
   ImGui_ImplVulkanH_Frame* vulkanFrame = &vulkanWindow->Frames[vulkanWindow->FrameIndex];
 
   // wait indefinitely instead of periodically checking
-  err = vkWaitForFences (gDevice, 1, &vulkanFrame->Fence, VK_TRUE, UINT64_MAX);
-  checkVkResult (err);
+  result = vkWaitForFences (gDevice, 1, &vulkanFrame->Fence, VK_TRUE, UINT64_MAX);
+  checkVkResult (result);
 
-  err = vkResetFences (gDevice, 1, &vulkanFrame->Fence);
-  checkVkResult(err);
+  result = vkResetFences (gDevice, 1, &vulkanFrame->Fence);
+  checkVkResult(result);
 
-  err = vkResetCommandPool (gDevice, vulkanFrame->CommandPool, 0);
-  checkVkResult (err);
+  result = vkResetCommandPool (gDevice, vulkanFrame->CommandPool, 0);
+  checkVkResult (result);
 
   VkCommandBufferBeginInfo commandBufferBeginInfo = {};
   commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   commandBufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-  err = vkBeginCommandBuffer (vulkanFrame->CommandBuffer, &commandBufferBeginInfo);
-  checkVkResult (err);
+  result = vkBeginCommandBuffer (vulkanFrame->CommandBuffer, &commandBufferBeginInfo);
+  checkVkResult (result);
 
   VkRenderPassBeginInfo renderPassBeginInfo = {};
   renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -378,11 +437,11 @@ static void renderDrawData (ImGui_ImplVulkanH_Window* vulkanWindow, ImDrawData* 
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = &renderCompleteSem;
 
-  err = vkEndCommandBuffer (vulkanFrame->CommandBuffer);
-  checkVkResult (err);
+  result = vkEndCommandBuffer (vulkanFrame->CommandBuffer);
+  checkVkResult (result);
 
-  err = vkQueueSubmit (gQueue, 1, &submitInfo, vulkanFrame->Fence);
-  checkVkResult (err);
+  result = vkQueueSubmit (gQueue, 1, &submitInfo, vulkanFrame->Fence);
+  checkVkResult (result);
   }
 //}}}
 //{{{
@@ -401,13 +460,13 @@ static void present (ImGui_ImplVulkanH_Window* vulkanWindow) {
   info.pSwapchains = &vulkanWindow->Swapchain;
   info.pImageIndices = &vulkanWindow->FrameIndex;
 
-  VkResult err = vkQueuePresentKHR (gQueue, &info);
-  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+  VkResult result = vkQueuePresentKHR (gQueue, &info);
+  if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
     gSwapChainRebuild = true;
     return;
     }
 
-  checkVkResult (err);
+  checkVkResult (result);
 
   // now we can use next set of semaphores
   vulkanWindow->SemaphoreIndex = (vulkanWindow->SemaphoreIndex + 1) % vulkanWindow->ImageCount;
@@ -417,12 +476,12 @@ static void present (ImGui_ImplVulkanH_Window* vulkanWindow) {
 //{{{
 int main (int, char**) {
 
-  // setup GLFW
+  // setup glfw
   glfwSetErrorCallback (glfwErrorCallback);
   if (!glfwInit())
     return 1;
 
-  // setup GLFW window
+  // setup glfw window
   glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
   GLFWwindow* window = glfwCreateWindow (1280, 720, "Dear ImGui GLFW+Vulkan example", NULL, NULL);
 
@@ -431,14 +490,18 @@ int main (int, char**) {
     printf ("GLFW: Vulkan Not Supported\n");
     return 1;
     }
-  uint32_t extensions_count = 0;
-  const char** extensions = glfwGetRequiredInstanceExtensions (&extensions_count);
-  setupVulkan (extensions, extensions_count);
+
+  // get glfw required vulkan extensions
+  uint32_t extensionsCount = 0;
+  const char** extensions = glfwGetRequiredInstanceExtensions (&extensionsCount);
+  for (uint32_t i = 0; i < extensionsCount; i++)
+    printf ("glfwVulkanExt:%d %s\n", int(i), extensions[i]);
+  setupVulkan (extensions, extensionsCount);
 
   // create window Surface
   VkSurfaceKHR surface;
-  VkResult err = glfwCreateWindowSurface (gInstance, window, gAllocator, &surface);
-  checkVkResult (err);
+  VkResult result = glfwCreateWindowSurface (gInstance, window, gAllocator, &surface);
+  checkVkResult (result);
 
   // create Framebuffers
   int width, height;
@@ -485,35 +548,7 @@ int main (int, char**) {
   vulkanInitInfo.CheckVkResultFn = checkVkResult;
   ImGui_ImplVulkan_Init (&vulkanInitInfo, vulkanWindow->RenderPass);
 
-  //{{{  upload Fonts
-  VkCommandPool commandPool = vulkanWindow->Frames[vulkanWindow->FrameIndex].CommandPool;
-  VkCommandBuffer commandBuffer = vulkanWindow->Frames[vulkanWindow->FrameIndex].CommandBuffer;
-
-  err = vkResetCommandPool (gDevice, commandPool, 0);
-  checkVkResult (err);
-
-  VkCommandBufferBeginInfo begin_info = {};
-  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-  err = vkBeginCommandBuffer (commandBuffer, &begin_info);
-  checkVkResult (err);
-
-  ImGui_ImplVulkan_CreateFontsTexture (commandBuffer);
-
-  VkSubmitInfo endSubmitInfo = {};
-  endSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  endSubmitInfo.commandBufferCount = 1;
-  endSubmitInfo.pCommandBuffers = &commandBuffer;
-  err = vkEndCommandBuffer (commandBuffer);
-  checkVkResult (err);
-
-  err = vkQueueSubmit (gQueue, 1, &endSubmitInfo, VK_NULL_HANDLE);
-  checkVkResult (err);
-
-  err = vkDeviceWaitIdle (gDevice);
-  checkVkResult (err);
-  ImGui_ImplVulkan_DestroyFontUploadObjects();
-  //}}}
+  uploadFonts (vulkanWindow);
 
   // Our state
   bool show_demo_window = true;
@@ -604,8 +639,8 @@ int main (int, char**) {
     }
 
   // cleanup
-  err = vkDeviceWaitIdle (gDevice);
-  checkVkResult (err);
+  result = vkDeviceWaitIdle (gDevice);
+  checkVkResult (result);
 
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplGlfw_Shutdown();
