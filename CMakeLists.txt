@@ -13,6 +13,7 @@ if (MSVC)
   option (BUILD_DX12 "Build dx12" OFF)
   set (COMPILE_MSVC "/arch:AVX" CACHE STRING "msvc compile options")
 else()
+  option (BUILD_VALIDATION "Build vulkan validation layers" OFF)
   set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
 endif()
 #
@@ -110,6 +111,9 @@ else()
 
     find_package (Vulkan REQUIRED)
     target_compile_definitions (${PROJECT_NAME} PRIVATE VK_PROTOTYPES)
+    if (BUILD_VALIDATION)
+      target_compile_definitions (${PROJECT_NAME} PRIVATE VALIDATION)
+    endif()
     #target_include_directories (${PROJECT_NAME} PRIVATE implot imgui glfw/deps)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw Vulkan::Vulkan)
 

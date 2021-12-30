@@ -23,20 +23,7 @@
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
-
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
-// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
-// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-  #pragma comment(lib, "legacy_stdio_definitions")
-#endif
-
-//#define IMGUI_UNLIMITED_FRAME_RATE
-#ifdef _DEBUG
-  #define IMGUI_VULKAN_DEBUG_REPORT
-#endif
 //}}}
-//#define IMGUI_VULKAN_DEBUG_REPORT
 
 static VkAllocationCallbacks*   gAllocator = NULL;
 static VkInstance               gInstance = VK_NULL_HANDLE;
@@ -52,13 +39,16 @@ static ImGui_ImplVulkanH_Window gMainWindowData;
 static int                      gMinImageCount = 2;
 static bool                     gSwapChainRebuild = false;
 
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
+#ifdef VALIDATION
   //{{{
   static VKAPI_ATTR VkBool32 VKAPI_CALL debugReport (VkDebugReportFlagsEXT flags,
                                                      VkDebugReportObjectTypeEXT objectType,
-                                                     uint64_t object, size_t location,
+                                                     uint64_t object,
+                                                     size_t location,
                                                      int32_t messageCode,
-                                                     const char* pLayerPrefix, const char* pMessage, void* pUserData) {
+                                                     const char* pLayerPrefix,
+                                                     const char* pMessage,
+                                                     void* pUserData) {
 
     (void)flags;
     (void)object;
@@ -67,7 +57,7 @@ static bool                     gSwapChainRebuild = false;
     (void)pUserData;
     (void)pLayerPrefix; // Unused arguments
 
-    printf ("[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
+    printf ("vkDebugReport type:%i:%s\n", objectType, pMessage);
     return VK_FALSE;
     }
   //}}}
@@ -75,7 +65,7 @@ static bool                     gSwapChainRebuild = false;
 
 //{{{
 static void glfwErrorCallback (int error, const char* description) {
-  printf ("Glfw Error %d: %s\n", error, description);
+  printf ("glfwError:%d:%s\n", error, description);
   }
 //}}}
 //{{{
@@ -84,7 +74,7 @@ static void checkVkResult (VkResult result) {
   if (result == 0)
     return;
 
-  printf ("[vulkan] Error: VkResult = %d\n", result);
+  printf ("vkResultError:%d\n", result);
 
   if (result < 0)
     abort();
@@ -102,7 +92,7 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
 
   VkResult result;
 
-  #ifdef IMGUI_VULKAN_DEBUG_REPORT
+  #ifdef VALIDATION
     //{{{  create with validation layers
     const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
     instanceCreateInfo.enabledLayerCount = 1;
@@ -112,14 +102,14 @@ static void setupVulkan (const char** extensions, uint32_t numExtensions) {
     // , so we duplicate the user array to add our new extension to it)
     const char** extensionsExt = (const char**)malloc (sizeof(const char*) * (numExtensions + 1));
     memcpy (extensionsExt, extensions, numExtensions * sizeof(const char*));
-    extensions_ext[extensions_count] = "VK_EXT_debug_report";
+    extensionsExt[numExtensions] = "VK_EXT_debug_report";
     instanceCreateInfo.enabledExtensionCount = numExtensions + 1;
     instanceCreateInfo.ppEnabledExtensionNames = extensionsExt;
 
     // Create Vulkan Instance
     result = vkCreateInstance (&instanceCreateInfo, gAllocator, &gInstance);
     checkVkResult (result);
-    free (extensions_ext);
+    free (extensionsExt);
 
     // Get the function pointer (required for any extensions)
     auto vkCreateDebugReportCallbackEXT =
@@ -311,7 +301,7 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
   vulkanWindow->PresentMode = ImGui_ImplVulkanH_SelectPresentMode (gPhysicalDevice,
                                                                    vulkanWindow->Surface,
                                                                    &present_modes[0], IM_ARRAYSIZE(present_modes));
-  printf ("[vulkan] Selected PresentMode = %d\n", vulkanWindow->PresentMode);
+  printf ("Selected PresentMode = %d\n", vulkanWindow->PresentMode);
 
   // Create SwapChain, RenderPass, Framebuffer, etc.
   IM_ASSERT (gMinImageCount >= 2);
@@ -321,7 +311,7 @@ static void setupVulkanWindow (ImGui_ImplVulkanH_Window* vulkanWindow, VkSurface
 //}}}
 //{{{
 static void uploadFonts (ImGui_ImplVulkanH_Window* vulkanWindow) {
-//  upload Fonts
+//  upload fonts texture
 
   VkCommandPool commandPool = vulkanWindow->Frames[vulkanWindow->FrameIndex].CommandPool;
   VkCommandBuffer commandBuffer = vulkanWindow->Frames[vulkanWindow->FrameIndex].CommandBuffer;
@@ -337,18 +327,19 @@ static void uploadFonts (ImGui_ImplVulkanH_Window* vulkanWindow) {
 
   ImGui_ImplVulkan_CreateFontsTexture (commandBuffer);
 
-  VkSubmitInfo endSubmitInfo = {};
-  endSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  endSubmitInfo.commandBufferCount = 1;
-  endSubmitInfo.pCommandBuffers = &commandBuffer;
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffer;
   result = vkEndCommandBuffer (commandBuffer);
   checkVkResult (result);
 
-  result = vkQueueSubmit (gQueue, 1, &endSubmitInfo, VK_NULL_HANDLE);
+  result = vkQueueSubmit (gQueue, 1, &submitInfo, VK_NULL_HANDLE);
   checkVkResult (result);
 
   result = vkDeviceWaitIdle (gDevice);
   checkVkResult (result);
+
   ImGui_ImplVulkan_DestroyFontUploadObjects();
   }
 //}}}
@@ -358,7 +349,7 @@ static void cleanupVulkan() {
 
   vkDestroyDescriptorPool (gDevice, gDescriptorPool, gAllocator);
 
-  #ifdef IMGUI_VULKAN_DEBUG_REPORT
+  #ifdef VALIDATION
     // Remove the debug report callback
     auto vkDestroyDebugReportCallbackEXT =
       (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr (gInstance, "vkDestroyDebugReportCallbackEXT");
@@ -483,7 +474,7 @@ int main (int, char**) {
 
   // setup glfw window
   glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow* window = glfwCreateWindow (1280, 720, "Dear ImGui GLFW+Vulkan example", NULL, NULL);
+  GLFWwindow* glfwWindow = glfwCreateWindow (1280, 720, "Dear ImGui GLFW+Vulkan example", NULL, NULL);
 
   // setup vulkan
   if (!glfwVulkanSupported()) {
@@ -498,14 +489,14 @@ int main (int, char**) {
     printf ("glfwVulkanExt:%d %s\n", int(i), extensions[i]);
   setupVulkan (extensions, extensionsCount);
 
-  // create window Surface
+  // create windowSurface
   VkSurfaceKHR surface;
-  VkResult result = glfwCreateWindowSurface (gInstance, window, gAllocator, &surface);
+  VkResult result = glfwCreateWindowSurface (gInstance, glfwWindow, gAllocator, &surface);
   checkVkResult (result);
 
-  // create Framebuffers
+  // create framebuffers
   int width, height;
-  glfwGetFramebufferSize (window, &width, &height);
+  glfwGetFramebufferSize (glfwWindow, &width, &height);
   ImGui_ImplVulkanH_Window* vulkanWindow = &gMainWindowData;
   setupVulkanWindow (vulkanWindow, surface, width, height);
 
@@ -532,7 +523,7 @@ int main (int, char**) {
   #endif
 
   // setup Platform/Renderer backends
-  ImGui_ImplGlfw_InitForVulkan (window, true);
+  ImGui_ImplGlfw_InitForVulkan (glfwWindow, true);
 
   ImGui_ImplVulkan_InitInfo vulkanInitInfo = {};
   vulkanInitInfo.Instance = gInstance;
@@ -556,14 +547,14 @@ int main (int, char**) {
   ImVec4 clearColor = ImVec4 (0.45f, 0.55f, 0.60f, 1.00f);
 
   // Main loop
-  while (!glfwWindowShouldClose(window)) {
+  while (!glfwWindowShouldClose (glfwWindow)) {
     glfwPollEvents();
 
     // Resize swap chain?
     if (gSwapChainRebuild) {
       int width;
       int height;
-      glfwGetFramebufferSize (window, &width, &height);
+      glfwGetFramebufferSize (glfwWindow, &width, &height);
       if ((width > 0) && (height > 0)) {
         ImGui_ImplVulkan_SetMinImageCount (gMinImageCount);
         ImGui_ImplVulkanH_CreateOrResizeWindow (gInstance, gPhysicalDevice, gDevice,
@@ -649,7 +640,7 @@ int main (int, char**) {
   cleanupVulkanWindow();
   cleanupVulkan();
 
-  glfwDestroyWindow (window);
+  glfwDestroyWindow (glfwWindow);
   glfwTerminate();
 
   return 0;
