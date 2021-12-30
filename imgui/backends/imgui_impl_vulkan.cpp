@@ -1724,9 +1724,10 @@ void ImGui_ImplVulkan_SetMinImageCount (uint32_t min_image_count) {
   IM_ASSERT(0); // FIXME-VIEWPORT: Unsupported. Need to recreate all swap chains!
   ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
 
-  VkResult err = vkDeviceWaitIdle(v->Device);
-  check_vk_result(err);
-  ImGui_ImplVulkanH_DestroyAllViewportsRenderBuffers(v->Device, v->Allocator);
+  VkResult err = vkDeviceWaitIdle (v->Device);
+  check_vk_result (err);
+
+  ImGui_ImplVulkanH_DestroyAllViewportsRenderBuffers (v->Device, v->Allocator);
 
   bd->VulkanInitInfo.MinImageCount = min_image_count;
   }
@@ -1735,8 +1736,8 @@ void ImGui_ImplVulkan_SetMinImageCount (uint32_t min_image_count) {
 void ImGui_ImplVulkan_NewFrame() {
 
   ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
-  IM_ASSERT(bd != NULL && "Did you call ImGui_ImplVulkan_Init()?");
-  IM_UNUSED(bd);
+  IM_ASSERT (bd != NULL && "Did you call ImGui_ImplVulkan_Init()?");
+  IM_UNUSED (bd);
   }
 //}}}
 //{{{
@@ -1756,7 +1757,7 @@ void ImGui_ImplVulkan_RenderDrawData (ImDrawData* draw_data, VkCommandBuffer com
 
   // Allocate array to store enough vertex/index buffers. Each unique viewport gets its own storage.
   ImGui_ImplVulkan_ViewportData* viewport_renderer_data = (ImGui_ImplVulkan_ViewportData*)draw_data->OwnerViewport->RendererUserData;
-  IM_ASSERT(viewport_renderer_data != NULL);
+  IM_ASSERT (viewport_renderer_data != NULL);
   ImGui_ImplVulkanH_WindowRenderBuffers* wrb = &viewport_renderer_data->RenderBuffers;
   if (wrb->FrameRenderBuffers == NULL) {
     wrb->Index = 0;
