@@ -34,7 +34,6 @@ static VkQueue                  gQueue = VK_NULL_HANDLE;
 static VkDebugReportCallbackEXT gDebugReport = VK_NULL_HANDLE;
 static VkPipelineCache          gPipelineCache = VK_NULL_HANDLE;
 static VkDescriptorPool         gDescriptorPool = VK_NULL_HANDLE;
-
 static ImGui_ImplVulkanH_Window gMainWindowData;
 static int                      gMinImageCount = 2;
 static bool                     gSwapChainRebuild = false;
