@@ -8,11 +8,11 @@ set (BUILD_GRAPHICS "GL_3" CACHE STRING "build graphics option")
 set (BUILD_VSYNC "VSYNC" CACHE STRING "Build imgui vsync option")
 set (BUILD_DOCKING "DOCKING" CACHE STRING "Build imgui docking option")
 #
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
   option (BUILD_DX11 "Build dx11" OFF)
   option (BUILD_DX12 "Build dx12" OFF)
   set (COMPILE_MSVC "/arch:AVX" CACHE STRING "msvc compile options")
-elseif (MAKE_SYSTEM_NAME STREQUAL Linux)
+elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
   option (BUILD_VALIDATION "Build vulkan validation layers" OFF)
   set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
 endif()
@@ -26,17 +26,34 @@ project (utils C CXX)
   file (GLOB SOURCE_FILES utils/*.cpp utils/*.c)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
-  if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
+    message (STATUS "buiding ${CMAKE_HOST_SYSTEM_NAME}")
     target_compile_options (${PROJECT_NAME} PUBLIC /W4 /fp:fast ${COMPILE_MSVC})
-  else()
+  elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
+    message (STATUS "buiding ${CMAKE_HOST_SYSTEM_NAME}")
     target_compile_definitions (${PROJECT_NAME} PUBLIC _LARGEFILE64_SOURCE _FILE_OFFSET_BITS=64)
     target_compile_options (${PROJECT_NAME} PUBLIC -Wall -Wextra
                                                    -Wno-missing-field-initializers
                                                    -Wno-format-security -Wno-format-overflow
                                                    -pedantic
-                                                   -march=native -flax-vector-conversions -ftree-vectorize
+                                                   -fno-exceptions
+                                                   -flax-vector-conversions -ftree-vectorize
+                                                   -march=native
                                                    ${COMPILE_LINUX})
+  elseif()
+    message (FATAL_ERROR, "unknown CMAKE_HOST_SYSTEM_NAME = ${CMAKE_HOST_SYSTEM_NAME}")
   endif()
+
+message (STATUS "building ${BUILD_GRAPHICS} graphics")
+if (BUILD_VSYNC)
+  message (STATUS "building vsync")
+endif()
+if (BUILD_DOCKING)
+  message (STATUS "building docking")
+endif()
+if (BUILD_GRAPHICS STREQUAL "VULKAN" AND BUILD_VALIDATION)
+  message (STATUS "building vulkan validation")
+endif()
 
 # glfw
 set (GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -72,7 +89,7 @@ project (implot C CXX)
   add_library (${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
 
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
   # gles3 emulator minimal app - windows only
   project (gles3emulator C CXX)
     add_executable (${PROJECT_NAME} glesEmulator/main.cpp)
@@ -102,7 +119,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi glad opengl32)
   endif()
 
-else()
+elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
   # vulkan app - linux only
   project (vulkan C CXX)
     file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_vulkan.h)
@@ -116,7 +133,6 @@ else()
     endif()
     #target_include_directories (${PROJECT_NAME} PRIVATE implot imgui glfw/deps)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw Vulkan::Vulkan)
-
 endif()
 
 # gles3 app
@@ -129,12 +145,12 @@ project (gles3 C CXX)
   target_compile_definitions (${PROJECT_NAME} PRIVATE GLFW_INCLUDE_ES3=1
                                                       IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>
                                                       IMGUI_IMPL_OPENGL_ES3=1)
-  if (MAKE_SYSTEM_NAME STREQUAL Windows)
+  if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
     # use arm GLES emulator
     target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
     target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator/lib)
     target_link_libraries (${PROJECT_NAME} PRIVATE imgui implot glfw libGLESv2 libEGL opengl32)
-  elseif (MAKE_SYSTEM_NAME STREQUAL Linux)
+  elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
     target_link_libraries (${PROJECT_NAME} imgui implot glfw GLESv2 glad)
   endif()
 
@@ -145,9 +161,9 @@ project (gl2 C CXX)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-  if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw d3d11 d3dcompiler glad opengl32)
-  elseif (MAKE_SYSTEM_NAME STREQUAL Linux)
+  elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw GL glad)
   endif()
 
@@ -157,8 +173,8 @@ project (gl3 C CXX)
   file (GLOB SOURCE_FILES gl3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-  if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw d3d11 d3dcompiler glad opengl32)
-  elseif (MAKE_SYSTEM_NAME STREQUAL Linux)
+  elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui glfw GL glad)
   endif()
