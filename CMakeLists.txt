@@ -15,6 +15,8 @@ if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
 elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
   option (BUILD_VALIDATION "Build vulkan validation layers" OFF)
   set (COMPILE_LINUX "-Ofast" CACHE STRING "linux compile options")
+elseif()
+  message (FATAL_ERROR, "unknown CMAKE_HOST_SYSTEM_NAME = ${CMAKE_HOST_SYSTEM_NAME}")
 endif()
 #
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
@@ -40,11 +42,9 @@ project (utils C CXX)
                                                    -flax-vector-conversions -ftree-vectorize
                                                    -march=native
                                                    ${COMPILE_LINUX})
-  elseif()
-    message (FATAL_ERROR, "unknown CMAKE_HOST_SYSTEM_NAME = ${CMAKE_HOST_SYSTEM_NAME}")
   endif()
 
-message (STATUS using ${BUILD_GRAPHICS} graphics")
+message (STATUS "using ${BUILD_GRAPHICS} graphics")
 if (BUILD_VSYNC)
   message (STATUS "using vsync")
 endif()
@@ -96,31 +96,32 @@ if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
     target_include_directories (${PROJECT_NAME} PRIVATE glesEmulator/include)
     target_link_directories (${PROJECT_NAME} PUBLIC glesEmulator/lib)
     target_link_libraries (${PROJECT_NAME} PRIVATE libGLESv2 libEGL opengl32)
-
-  # dx11 app - optioned to shutup virus checker
-  if (BUILD_DX11)
-    project (dx11 C CXX)
-      file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
-      file (GLOB SOURCE_FILES dx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
-      add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-
-      target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler glad opengl32)
   endif()
 
-  # dx12 app
-  if (BUILD_DX12)
-    project (dx12 C CXX)
-      file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx12.h)
-      file (GLOB SOURCE_FILES dx12.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx12.cpp)
-      add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+# dx11 app - optioned to shutup virus checker
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows AND BUILD_DX11)
+  project (dx11 C CXX)
+    file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx11.h)
+    file (GLOB SOURCE_FILES dx11.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx11.cpp)
+    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
-      target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
-      target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi glad opengl32)
-  endif()
+    target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d11 d3dcompiler glad opengl32)
+endif()
 
-elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
-  # vulkan app - linux only
+# dx12 app
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows AND BUILD_DX12)
+  project (dx12 C CXX)
+    file (GLOB HEADER_FILES backends/imgui_impl_win32.h imgui/backends/imgui_impl_dx12.h)
+    file (GLOB SOURCE_FILES dx12.cpp imgui/backends/imgui_impl_win32.cpp imgui/backends/imgui_impl_dx12.cpp)
+    add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+    target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui d3d12 d3d11 d3dcompiler dxgi glad opengl32)
+endif()
+
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
+  # vulkan app
   project (vulkan C CXX)
     file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_vulkan.h)
     file (GLOB SOURCE_FILES vulkan.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_vulkan.cpp)
