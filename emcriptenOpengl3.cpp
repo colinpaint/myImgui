@@ -13,7 +13,9 @@
 #include "imgui_impl_opengl3.h"
 
 #include <stdio.h>
+
 #include <emscripten.h>
+
 #include <SDL.h>
 #include <SDL_opengles2.h>
 //}}}
@@ -100,18 +102,19 @@ static void main_loop (void* arg) {
   }
 //}}}
 
-//{{{
 int main (int, char**) {
 
   // Setup SDL
   if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
+    //{{{  error, return
     printf ("Error: %s\n", SDL_GetError());
     return -1;
     }
+    //}}}
 
   // For the browser using Emscripten, we are going to use WebGL1 with GL ES2. See the Makefile. for requirement details.
-  // It is very likely the generated file won't work in many browsers. Firefox is the only sure bet, but I have successfully
-  // run this code on Chrome for Android for example.
+  // It is very likely the generated file won't work in many browsers. Firefox is the only sure bet, 
+  // but I have successfully run this code on Chrome for Android for example.
   const char* glsl_version = "#version 100";
   //const char* glsl_version = "#version 300 es";
   SDL_GL_SetAttribute (SDL_GL_CONTEXT_FLAGS, 0);
@@ -126,12 +129,17 @@ int main (int, char**) {
   SDL_DisplayMode current;
   SDL_GetCurrentDisplayMode (0, &current);
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-  g_Window = SDL_CreateWindow ("Dear ImGui Emscripten example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+  g_Window = SDL_CreateWindow ("imgui Emscripten", 
+                               SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+
   g_GLContext = SDL_GL_CreateContext (g_Window);
   if (!g_GLContext) {
+    //{{{  error,return
     fprintf(stderr, "Failed to initialize WebGL context!\n");
     return 1;
     }
+    //}}}
+
   SDL_GL_SetSwapInterval (1); // Enable vsync
 
   // Setup Dear ImGui context
@@ -154,7 +162,7 @@ int main (int, char**) {
   ImGui_ImplSDL2_InitForOpenGL (g_Window, g_GLContext);
   ImGui_ImplOpenGL3_Init (glsl_version);
 
-  // Load Fonts
+  //{{{  Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
   // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
   // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
@@ -171,8 +179,8 @@ int main (int, char**) {
     //ImFont* font = io.Fonts->AddFontFromFileTTF("fonts/ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
   #endif
+  //}}}
 
   // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
   emscripten_set_main_loop_arg (main_loop, NULL, 0, true);
   }
-//}}}
