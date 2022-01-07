@@ -137,9 +137,9 @@ if (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
 endif()
 
 # gles3 app
-project (gles3 C CXX)
+project (glfwGLES3 C CXX)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl3.h)
-  file (GLOB SOURCE_FILES gles3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
+  file (GLOB SOURCE_FILES glfwGLES3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
@@ -156,9 +156,9 @@ project (gles3 C CXX)
   endif()
 
 # gl2 app
-project (gl2 C CXX)
+project (glfwGL2 C CXX)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h imgui/backends/imgui_impl_opengl2.h)
-  file (GLOB SOURCE_FILES gl2.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl2.cpp)
+  file (GLOB SOURCE_FILES glfwGL2.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl2.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   target_include_directories (${PROJECT_NAME} PUBLIC implot imgui)
@@ -169,9 +169,9 @@ project (gl2 C CXX)
   endif()
 
 # gl3 app
-project (gl3 C CXX)
+project (glfwGL3 C CXX)
   file (GLOB HEADER_FILES backends/imgui_impl_glfw.h backends/imgui_impl_opengl3.h)
-  file (GLOB SOURCE_FILES gl3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
+  file (GLOB SOURCE_FILES glfwGL3.cpp imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp)
   add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
   if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
