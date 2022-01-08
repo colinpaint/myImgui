@@ -38,8 +38,8 @@ project (utils C CXX)
                                                    -Wno-missing-field-initializers
                                                    -Wno-format-security -Wno-format-overflow
                                                    -pedantic
-                                                   -fno-exceptions
                                                    -flax-vector-conversions -ftree-vectorize
+                                                   -fno-exceptions
                                                    -march=native
                                                    ${COMPILE_LINUX})
   endif()
@@ -179,10 +179,11 @@ project (sdlGL3 C CXX)
                                   imgui/backends/imgui_impl_opengl3.h imgui/backends/imgui_impl_opengl3.cpp)
 
   target_compile_definitions (${PROJECT_NAME} PRIVATE ${BUILD_VSYNC} ${BUILD_DOCKING})
-  target_include_directories (${PROJECT_NAME} PRIVATE SDL/include imgui imgui/backends)
+  target_include_directories (${PROJECT_NAME} PRIVATE imgui imgui/backends)
 
   if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
     # windows uses prebuilt SDL2 includes/.lib/.dll in local SDL directory
+    target_include_directories (${PROJECT_NAME} PRIVATE SDL/include)
     target_link_directories (${PROJECT_NAME} PRIVATE SDL/lib/x64)
     target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui utils SDL2 opengl32)
   elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)

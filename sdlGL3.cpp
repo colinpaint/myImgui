@@ -25,7 +25,7 @@
 int main (int, char**) {
   // Setup SDL
   // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
-  // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. 
+  // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled..
   // updating to latest version of SDL is recommended!)
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
     //{{{  error, return
@@ -67,7 +67,8 @@ int main (int, char**) {
   SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 8);
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-  SDL_Window* window = SDL_CreateWindow ("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+  SDL_Window* window = SDL_CreateWindow ("SDL2 OpenGL3", 
+                                         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
 
   SDL_GLContext gl_context = SDL_GL_CreateContext (window);
   SDL_GL_MakeCurrent (window, gl_context);
