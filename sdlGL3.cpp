@@ -22,12 +22,12 @@
 #endif
 //}}}
 
-int main (int, char**) {
-  // Setup SDL
-  // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
-  // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled..
-  // updating to latest version of SDL is recommended!)
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
+int main (int numArgs, char* args[]) {
+
+  (void)numArgs;
+  (void)char;
+
+  if (!SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMERR)) {
     //{{{  error, return
     printf ("Error: %s\n", SDL_GetError());
     return -1;
@@ -38,18 +38,11 @@ int main (int, char**) {
   #if defined(IMGUI_IMPL_OPENGL_ES2)
     //{{{  GL ES 2.0 + GLSL 100
     const char* glsl_version = "#version 100";
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    //}}}
-  #elif defined(__APPLE__)
-    //{{{  GL 3.2 Core + GLSL 150
-    const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     //}}}
   #else
     //{{{  GL 3.0 + GLSL 130
@@ -67,7 +60,7 @@ int main (int, char**) {
   SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 8);
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-  SDL_Window* window = SDL_CreateWindow ("SDL2 OpenGL3", 
+  SDL_Window* window = SDL_CreateWindow ("SDL2 openGL3",
                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
 
   SDL_GLContext gl_context = SDL_GL_CreateContext (window);
