@@ -24,10 +24,10 @@
 
 int main (int numArgs, char* args[]) {
 
-  (void)numArgs;
-  (void)char;
+  (void)numArgs; 
+  (void)args;
 
-  if (!SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMERR)) {
+  if (!SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
     //{{{  error, return
     printf ("Error: %s\n", SDL_GetError());
     return -1;
