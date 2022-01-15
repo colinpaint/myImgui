@@ -67,7 +67,7 @@ add_subdirectory (glfw)
 # glad
 if (BUILD_GRAPHICS STREQUAL "GL_2")
   add_subdirectory (glad2.1+fbo+vao)
-elseif (BUILD_GRAPHICS STREQUAL "GL_3")
+else()
   add_subdirectory (glad4.5core)
 endif()
 
