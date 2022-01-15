@@ -153,7 +153,7 @@ project (glfwGLES3 C CXX)
     target_link_directories (${PROJECT_NAME} PRIVATE glesEmulator/lib)
     target_link_libraries (${PROJECT_NAME} PRIVATE imgui implot glfw libGLESv2 libEGL opengl32)
   elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
-    target_link_libraries (${PROJECT_NAME} imgui implot glfw GLESv2 glad)
+    target_link_libraries (${PROJECT_NAME} imgui implot glfw GLESv2)
   endif()
 
 # glfwGL2 app
