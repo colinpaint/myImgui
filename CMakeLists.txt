@@ -191,7 +191,7 @@ project (sdlGL3 C CXX)
     find_package (PkgConfig REQUIRED)
     pkg_check_modules (SDL2 REQUIRED IMPORTED_TARGET sdl2)
     target_include_directories (${PROJECT_NAME} PRIVATE PkgConfig::SDL2)
-    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui utils PkgConfig::SDL2 GL)
+    target_link_libraries (${PROJECT_NAME} PRIVATE implot imgui utils PkgConfig::SDL2 GL DL)
   endif()
 
 # glfwGl3 app
